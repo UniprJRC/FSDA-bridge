@@ -1,17 +1,10 @@
 name = "FSDA"
 uuid = "105d9057-255b-4b48-8f36-550cb6d62a6b"
+keywords = ["fsda", "matlab", "matlab engine", "robust statistics", "forward search", "outlier detection"]
 license = "EUPL-1.2"
+desc = "Call FSDA (MATLAB robust-statistics toolbox) routines from Julia via the MATLAB Engine."
 version = "0.1.0"
 authors = ["Faisal Jan <faisaljanfazal@gmail.com>"]
-desc = "Call FSDA (MATLAB robust-statistics toolbox) routines from Julia via the MATLAB Engine."
-keywords = [
-    "fsda",
-    "matlab",
-    "matlab engine",
-    "robust statistics",
-    "forward search",
-    "outlier detection",
-]
 
 [deps]
 PythonCall = "6099a3de-0909-46bc-b1f4-468b9a2dfc0d"
