@@ -66,8 +66,8 @@ catch
     "n/a"
 end
 
-const _np = pyimport("numpy")
-const _builtins = pyimport("builtins")
+const _np = PythonCall.pynew()
+const _builtins = PythonCall.pynew()
 
 # --- Opaque handle -----------------------------------------------------------
 struct FsdaEngineHandle
