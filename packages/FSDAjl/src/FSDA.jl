@@ -1,11 +1,10 @@
 module FSDA
 
-const _ENGINE_DIR = joinpath(@__DIR__, "engines")# absolute path to the engine directory
+const _ENGINE_DIR = joinpath(@__DIR__, "engines")
 
 # Load the engine module
 include(joinpath(_ENGINE_DIR, "engine.jl"))
 
-# CondaPkg guard
 function __init__()
     conda_backend = get(ENV, "JULIA_CONDAPKG_BACKEND", "unset")
     if conda_backend != "Null"
@@ -22,7 +21,47 @@ function __init__()
     end
 end
 
-# Re-export the mandatory API
+# ===================================================================
+# TASK B: Global Engine State & Dynamic Wrappers (Metaprogramming)
+# ===================================================================
+
+const _GLOBAL_ENGINE = Ref{Any}(nothing)
+
+# Zero-argument stop_engine to cleanly shut down the auto-started global engine
+function stop_engine()
+    if _GLOBAL_ENGINE[] !== nothing
+        stop_engine(_GLOBAL_ENGINE[]) # Calls the 1-arg method from engine.jl
+        _GLOBAL_ENGINE[] = nothing
+        @info "Global FSDA engine stopped."
+    else
+        @info "No global engine is currently running."
+    end
+end
+
+# Re-export the mandatory API (Removed the redundant global functions)
 export start_engine, call, eval_expr, stop_engine
+
+const FSDA_ROUTINES = [
+    :mahalFS,
+    :Score,
+    :FSR,
+    :FSRaddt,
+    :tclust,
+    :getYahoo
+]
+
+# Generate the facade functions dynamically at compile time
+for routine in FSDA_ROUTINES
+    @eval begin
+        function $routine(args...; kwargs...)
+            if _GLOBAL_ENGINE[] === nothing
+                @info "Auto-starting FSDA engine (lazy initialization)..."
+                _GLOBAL_ENGINE[] = start_engine()
+            end
+            return call(_GLOBAL_ENGINE[], $(string(routine)), args...; kwargs...)
+        end
+        export $routine
+    end
+end
 
 end
