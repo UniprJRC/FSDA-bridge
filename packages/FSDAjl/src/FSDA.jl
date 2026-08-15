@@ -20,10 +20,6 @@ function __init__()
         - Windows (PS):     \$env:JULIA_CONDAPKG_BACKEND="Null"
         """
     end
-
-    # fill the empty pointers with modules
-    PythonCall.pycopy!(_np, pyimport("numpy"))
-    PythonCall.pycopy!(_builtins, pyimport("builtins"))
 end
 
 # Re-export the mandatory API

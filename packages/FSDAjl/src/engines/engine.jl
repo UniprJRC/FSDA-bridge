@@ -68,6 +68,18 @@ end
 
 const _np = PythonCall.pynew()
 const _builtins = PythonCall.pynew()
+const _PY_READY = Ref(false)
+
+# Controls state of py modules import, and lazy loads on  on the first use
+function _ensure_python!()
+    _PY_READY[] && return nothing
+    np = pyimport("numpy")
+    builtins = pyimport("builtins")
+    PythonCall.pycopy!(_np, np)
+    PythonCall.pycopy!(_builtins, builtins)
+    _PY_READY[] = true
+    return nothing
+end
 
 # --- Opaque handle -----------------------------------------------------------
 struct FsdaEngineHandle
@@ -119,6 +131,7 @@ load time.
 function start_engine(; routine = nothing,
                        python::AbstractString = get(ENV, "FSDA_DEV_VENV", ""),
                        fsda_root = nothing)
+    _ensure_python!()
     requested = isempty(String(python)) ? _PYTHON_EXE : _resolve_python(python)
     if requested != _PYTHON_EXE
         @warn("PythonCall is already bound to a different interpreter; start a fresh " *
@@ -151,6 +164,7 @@ Julia by `_py2jl`.
 function call(handle, name, args...; nargout::Integer = 1, echo_output::Bool = false,
               options = nothing, kwargs...)
     _validate_handle(handle)
+    _ensure_python!()
     pyargs = Py[_to_py(a) for a in args]
     conv = (; (k => _to_py(v) for (k, v) in kwargs)...)   # convert kwarg values to py
     res = handle.engine.call(name, pyargs...;
@@ -166,6 +180,7 @@ Evaluate a MATLAB expression through the engine (table/timetable aware).
 """
 function eval_expr(handle, expr; nargout::Integer = 1)
     _validate_handle(handle)
+    _ensure_python!()
     return _py2jl(handle.engine.eval(expr; nargout = nargout))
 end
 
@@ -180,6 +195,7 @@ Julia / PythonCall / Python / MATLAB / matlabengine details.
 """
 function diagnostics(handle)
     _validate_handle(handle)
+    _ensure_python!()
     sys = pyimport("sys")
     metadata = pyimport("importlib.metadata")
     engine_pkg = try
