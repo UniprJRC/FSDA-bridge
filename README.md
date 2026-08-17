@@ -6,7 +6,7 @@ repo holds two things:
 
 - **`pyfsda`** (`packages/pyfsda/`) — an **installable Python package**: `import pyfsda` and call any
   FSDA routine as `pyfsda.Score(y, X, ...)`. It has its own build, tests, examples, and CI, and is
-  published to TestPyPI (real PyPI to follow). **Start here if you just want to use FSDA from Python.**
+  published to PyPI. **Start here if you just want to use FSDA from Python.**
 - **The research prototype** (`code/`, `specs/`) it was distilled from — a spec-driven study of the
   Python↔MATLAB bridge, including thin **Julia** (PythonCall) and **R** (reticulate) surfaces over the
   same engine. This is **no build / no CI** by design (see §1–10 below for the internals). Work here is
@@ -21,13 +21,12 @@ repo holds two things:
 release** (e.g. `pip install "matlabengine==26.1.*"` for R2026a; a different MATLAB needs its paired
 version). Python 3.9–3.13.
 
-**Install** (currently on TestPyPI; deps aren't mirrored there, so `--no-deps`):
+**Install**:
 
 ```bash
-pip install -i https://test.pypi.org/simple/ pyfsda==0.4.0 --no-deps
-# with the optional pandas view (real deps come from PyPI):
-pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple "pyfsda[pandas]==0.4.0"
-# once it's on real PyPI:  pip install pyfsda        # or  pip install "pyfsda[pandas]"
+pip install pyfsda
+# with the optional pandas view:
+pip install pyfsda[pandas]
 ```
 
 **Call any FSDA routine as a Python function** — the MATLAB session starts on first use and is reused:
@@ -44,14 +43,17 @@ pyfsda.stop()                                     # optional; also runs at exit
 `pyfsda.<name>` works for **any** FSDA routine (and `from pyfsda import Score` too). Prefer managing the
 session yourself? Use the explicit engine: `from pyfsda import FsdaEngine; eng = FsdaEngine.start(...)`.
 
-**New in 0.4.0 — optional pandas view** (`pip install pyfsda[pandas]`): pass `frames=True` to get
+**New in 0.5.0 — optional pandas view** (`pip install pyfsda[pandas]`): pass `frames=True` to get
 `table`/`timetable` outputs back as a `pandas.DataFrame` (row/column labels preserved as the index and
 columns), and pass a `pandas.DataFrame` argument to send a MATLAB `table` in — e.g. a labeled
-contingency table straight into `corrNominal`. pandas is optional and lazily imported; the default
+contingency table straight into `corrNominal` or a table containing summary statistics into `grpstatsFS`. 
+Output stuctures containing tables are also converted to Pandas' dataframes. Max nesting of tables is 2 
+levels. Pandas is optional and lazily imported; the default
 return is still the neutral dict, so the shared engine and the R/Julia surfaces are unchanged.
 
 **Learn more:** runnable [`examples/`](packages/pyfsda/examples/) (`score_example_simple.py`,
-`score_example.py`, `corrnominal_pandas_example.py`, `smoke_test.py`), the package
+`score_example.py`, `corrnominal_pandas_example.py`, `grpstatsFS_pandas_example.py`,
+`resfwdplot_brush_example.py`, `smoke_test.py`), the package
 [README](packages/pyfsda/README.md), and [`CONTRIBUTING.md`](packages/pyfsda/CONTRIBUTING.md)
 (dev, self-hosted CI, release flow).
 

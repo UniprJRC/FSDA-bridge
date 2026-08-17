@@ -74,6 +74,31 @@ def to_dataframe(table_dict):
     return df
 
 
+def dataframe_to_table_dict(df) -> dict:
+    """Convert a ``pandas.DataFrame`` to the neutral table-dict shape (inverse of
+    ``to_dataframe``): ``{VariableNames, RowNames, data, height}``.
+
+    Used when a table arrives already as a DataFrame -- e.g. ``matlab.engine`` natively
+    converts a table nested inside a returned struct to a DataFrame. Normalising it to the
+    table-dict keeps a nested table on the same footing as a top-level one (dict by default,
+    ``pandas.DataFrame`` under ``frames=True``), so labels are never silently dropped. Reads
+    only the DataFrame's own attributes -- no ``import pandas`` needed here.
+
+    A default ``RangeIndex(0..n-1)`` becomes an empty ``RowNames`` (unlabelled table);
+    any other index is kept as string row labels.
+    """
+    columns = [str(c) for c in df.columns]
+    data = {str(c): df[c].to_numpy() for c in df.columns}
+    index = list(df.index)
+    default = index == list(range(len(df)))
+    return {
+        "VariableNames": columns,
+        "RowNames": [] if default else [str(i) for i in index],
+        "data": data,
+        "height": len(df),
+    }
+
+
 def apply_frames(obj):
     """Recurse through a marshalled result, converting every table-dict to a DataFrame.
 

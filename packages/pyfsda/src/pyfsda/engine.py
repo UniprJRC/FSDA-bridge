@@ -54,7 +54,7 @@ import numpy as np
 import matlab
 import matlab.engine
 
-from .frames import apply_frames, is_dataframe
+from .frames import apply_frames, dataframe_to_table_dict, is_dataframe
 
 # call() reserves these keyword names for its own control; every OTHER keyword is
 # forwarded to MATLAB as a name/value pair. Notably `msg` is NOT reserved -- it
@@ -125,6 +125,9 @@ def from_matlab(x):
     dict        -> {k: from_matlab(v)}                 (struct / nested struct).
     str/bool/int/float -> passed through                (char scalar, logical scalar).
     list/tuple  -> [from_matlab(v) ...]                 (cell array / nargout > 1).
+    DataFrame   -> neutral table-dict                   (a table nested in a struct that
+                  the engine natively converted to pandas; keeps it on the same footing
+                  as a top-level table -- dict here, DataFrame under frames=True).
     matlab.*    -> np.asarray(x)  (numeric/logical array; shape & NaN/Inf preserved,
                   NO reshape).
     """
@@ -138,6 +141,11 @@ def from_matlab(x):
         return x
     if isinstance(x, (list, tuple)):
         return [from_matlab(v) for v in x]
+    if is_dataframe(x):
+        # matlab.engine (with pandas) converts a table nested in a returned struct straight
+        # to a DataFrame; normalise it to the table-dict so labels survive and frames=True
+        # can view it -- otherwise np.asarray below would flatten it to a bare ndarray.
+        return dataframe_to_table_dict(x)
     # matlab.double / matlab.logical / matlab.int* and anything array-like.
     try:
         return np.asarray(x)
@@ -261,22 +269,15 @@ class FsdaEngine:
             if not _IDENT_RE.match(str(key)):
                 raise ValueError(f"unsafe / malformed option name: {key!r}")
 
-        ws = self.eng.workspace
         in_names, opt_tokens, temp = [], [], []
         for i, a in enumerate(args):
             vn = f"fe_in{i}"
-            if is_dataframe(a):
-                self._df_to_table_var(a, vn)      # DataFrame -> MATLAB table
-            else:
-                ws[vn] = to_matlab(a)
+            self._set_input_var(a, vn)            # dict->struct / DataFrame->table / array / ...
             in_names.append(vn)
             temp.append(vn)
         for key, value in pairs.items():
             vn = f"fe_opt_{key}"
-            if is_dataframe(value):
-                self._df_to_table_var(value, vn)  # DataFrame option value -> MATLAB table
-            else:
-                ws[vn] = to_matlab(value)
+            self._set_input_var(value, vn)        # option value (may itself be a struct/table)
             opt_tokens.append(f"'{key}',{vn}")   # 'name', tempvar
             temp.append(vn)
 
@@ -429,21 +430,27 @@ class FsdaEngine:
                 self.eng.eval(f"{vn}.Properties.RowNames", nargout=1))
         return result
 
-    def _cellstr_to_var(self, values, vn: str) -> None:
+    def _cellstr_to_var(self, values, vn: str, column: bool = False) -> None:
         """Build a MATLAB cellstr in workspace var `vn` from a Python list[str].
 
         Each element crosses as a char scalar (a supported engine input); the cell is then
         assembled MATLAB-side. Only the bridge's own temp names (`{vn}_e0`, ...) are ever
         interpolated -- never the string CONTENTS -- so column/row labels are injection-safe.
+
+        `column=False` builds a 1 x n **row** cell (what `array2table 'VariableNames'` wants);
+        `column=True` builds an n x 1 **column** cell -- the orientation FSDA graphics structs
+        use for style fields, e.g. `fground.Color={'b';'g';...}` consumed via
+        `set(H,{'Color'},...)` (a row there raises "Size mismatch in Param/Value Cell pair").
         """
         ws = self.eng.workspace
+        sep = ";" if column else ","
         elem_vars = []
         try:
             for k, v in enumerate(values):
                 ev = f"{vn}_e{k}"
                 ws[ev] = str(v)
                 elem_vars.append(ev)
-            self.eng.eval(f"{vn} = {{{','.join(elem_vars)}}};", nargout=0)
+            self.eng.eval(f"{vn} = {{{sep.join(elem_vars)}}};", nargout=0)
         finally:
             self._clear(elem_vars)
 
@@ -483,6 +490,67 @@ class FsdaEngine:
                 self.eng.eval(f"{vn}.Properties.RowNames = fe_rownames;", nargout=0)
         finally:
             self._clear(temp)
+
+    def _set_input_var(self, value, vn: str) -> None:
+        """Marshal one Python value into workspace variable `vn` for use as a MATLAB input.
+
+        Handles the container cases the scalar/array `to_matlab` path cannot express, so a
+        struct-consuming FSDA routine can be called with plain Python objects:
+
+            dict            -> struct   (recursed; e.g. an FSReda result, or a `databrush`
+                                         / `fground` option struct)
+            pandas.DataFrame-> table    (see `_df_to_table_var`)
+            list/tuple[str] -> cellstr  ({'--','-.',':'})
+            list/tuple[num] -> 1 x n double row
+            other list/tuple-> cell     (mixed / nested, recursed)
+            everything else -> `to_matlab` (ndarray, number, str, bool, matlab.* passthrough)
+        """
+        if isinstance(value, dict):
+            self._dict_to_struct_var(value, vn)
+        elif is_dataframe(value):
+            self._df_to_table_var(value, vn)
+        elif isinstance(value, (list, tuple)):
+            seq = list(value)
+            if seq and all(isinstance(e, str) for e in seq):
+                self._cellstr_to_var(seq, vn, column=True)          # n x 1 cell of char (FSDA style)
+            elif all(isinstance(e, (int, float)) and not isinstance(e, bool) for e in seq):
+                self.eng.workspace[vn] = to_matlab(seq)             # numeric row (or [] if empty)
+            else:
+                self._list_to_cell_var(seq, vn)                     # general cell
+        else:
+            self.eng.workspace[vn] = to_matlab(value)
+
+    def _list_to_cell_var(self, seq, vn: str) -> None:
+        """Build a MATLAB row cell in `vn` from a Python list of arbitrary values (recursed)."""
+        elem_vars = []
+        try:
+            for k, v in enumerate(seq):
+                ev = f"{vn}_c{k}"
+                self._set_input_var(v, ev)
+                elem_vars.append(ev)
+            self.eng.eval(f"{vn} = {{{','.join(elem_vars)}}};", nargout=0)
+        finally:
+            self._clear(elem_vars)
+
+    def _dict_to_struct_var(self, d: dict, vn: str) -> None:
+        """Assemble a MATLAB struct in workspace variable `vn` from a Python dict.
+
+        The inverse of the struct -> dict output path: each field value is marshalled with
+        `_set_input_var` (nested dict -> struct, list[str] -> cellstr, ndarray -> double,
+        ...), then assigned by field name. Field names are validated against `_IDENT_RE` and
+        only the bridge's own temp names are interpolated -- field VALUES never are. This is
+        what lets an FSReda result dict cross back as a struct that e.g. `resfwdplot` accepts.
+        """
+        self.eng.eval(f"{vn} = struct();", nargout=0)
+        for field, value in d.items():
+            if not _IDENT_RE.match(str(field)):
+                raise ValueError(f"unsafe / malformed struct field name: {field!r}")
+            fv = f"{vn}_f"
+            try:
+                self._set_input_var(value, fv)
+                self.eng.eval(f"{vn}.{field} = {fv};", nargout=0)
+            finally:
+                self._clear([fv])
 
     # --- diagnostics ---------------------------------------------------------
     def which(self, name: str) -> str:
