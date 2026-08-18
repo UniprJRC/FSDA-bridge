@@ -36,6 +36,16 @@ function stop_engine()
     end
 end
 
+# global eval expr
+function eval_expr(expr; nargout::Integer = 1)
+    if _GLOBAL_ENGINE[] === nothing
+        @info "Auto-starting FSDA engine..."
+        _GLOBAL_ENGINE[] = start_engine()
+    end
+    return eval_expr(_GLOBAL_ENGINE[], expr; nargout = nargout)
+end
+
+
 # Re-export the mandatory API
 export start_engine, call, eval_expr, stop_engine
 
