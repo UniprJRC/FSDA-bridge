@@ -4,8 +4,8 @@ const _ENGINE_DIR = joinpath(@__DIR__, "engines") # absolute path to the engine 
 
 # Load the engine module
 include(joinpath(_ENGINE_DIR, "engine.jl"))
-# CondaPkg guard
 
+# CondaPkg guard
 function __init__()
     conda_backend = get(ENV, "JULIA_CONDAPKG_BACKEND", "unset")
     if conda_backend != "Null"
@@ -23,9 +23,6 @@ function __init__()
 end
 
 
-# TASK B: Global Engine State & Dynamic Wrappers (Metaprogramming)
-
-
 const _GLOBAL_ENGINE = Ref{Any}(nothing)
 
 # Zero-argument stop_engine to cleanly shut down the auto-started global engine
@@ -39,7 +36,7 @@ function stop_engine()
     end
 end
 
-# Re-export the mandatory API (Removed the redundant global functions)
+# Re-export the mandatory API
 export start_engine, call, eval_expr, stop_engine
 
 const FSDA_ROUTINES = [
@@ -56,7 +53,7 @@ for routine in FSDA_ROUTINES
     @eval begin
         function $routine(args...; kwargs...)
             if _GLOBAL_ENGINE[] === nothing
-                @info "Auto-starting FSDA engine (lazy initialization)..."
+                @info "Auto-starting FSDA engine..."
                 _GLOBAL_ENGINE[] = start_engine()
             end
             return call(_GLOBAL_ENGINE[], $(string(routine)), args...; kwargs...)
@@ -66,3 +63,4 @@ for routine in FSDA_ROUTINES
 end
 
 end
+
