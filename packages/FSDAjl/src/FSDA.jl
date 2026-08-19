@@ -67,7 +67,18 @@ const FSDA_ROUTINES = [
     :FSR,
     :FSRaddt,
     :tclust,
-    :getYahoo
+    :getYahoo,
+    :unibiv,
+    :LXS,
+    :MMreg,
+    :FSM,
+    :FSMeda,
+    :mcd,
+    :FSRfan,
+    :tkmeans,
+    :yXplot,
+    :malfwdplot,
+    :boxplotb
 ]
 
 # Generate the facade functions dynamically at compile time
