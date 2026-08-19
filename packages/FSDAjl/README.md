@@ -32,26 +32,50 @@ Pkg.add("FSDA")   # once registered in General
 FSDA.jl calls into an existing Python environment via
 [PythonCall.jl](https://github.com/JuliaPy/PythonCall.jl). You must tell PythonCall to use that environment rather than provisioning its own via Conda. Conda cannot install MATLAB's `matlabengine` for you, and letting PythonCall try will produce confusing errors.
 
+**Both** of the following variables are required — `JULIA_PYTHONCALL_EXE`
+is not an alternative:
+
 ```bash
 export JULIA_CONDAPKG_BACKEND=Null
-export FSDA_DEV_VENV=/path/to/your/venv/bin/python
-
-# or, alternatively:
 export JULIA_PYTHONCALL_EXE=/path/to/your/venv/bin/python
 ```
 
 Set these **before** starting Julia / loading the package. FSDA.jl checks `JULIA_CONDAPKG_BACKEND` at load time and will warn loudly if it isn't set to `"Null"`.
 
+ **Known open issue:** `JULIA_PYTHONCALL_EXE` is currently only picked up at precompilation time by PythonCall.jl. 
+ If you point it to a different Python environment and restart Julia without clearing your precompiled cache, the old interpreter will still be used.
+  A fix for this is still being worked out.
+
+
+
 ## Quick start
 
 ```julia
+
 using FSDA
+using Statistics
+h = FSDA.start_engine()
+Y=randn(10,2);
+MU=median(Y); 
+SIGMA=[0.3 0.4; 0.4 1];
 
-FSDA.start_engine()
+d = FSDA.call(h,"mahalFS", Y, MU, SIGMA)
 
-result = FSDA.call("mahalFS", Y, mu, Sigma)
+FSDA.stop_engine(h)
 
-FSDA.stop_engine()
+```
+New style with facade
+```julia
+using FSDA
+using Statistics
+
+Y=randn(10,2);
+MU=median(Y); 
+SIGMA=[0.3 0.4; 0.4 1];
+
+d = FSDA.mahalFS(Y, MU, SIGMA)   
+
+FSDA.stop_engine()              
 ```
 
 ## Licence
