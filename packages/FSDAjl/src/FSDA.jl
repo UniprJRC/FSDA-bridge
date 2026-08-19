@@ -47,7 +47,7 @@ end
 
 
 # Re-export the mandatory API
-export start_engine, call, eval_expr, stop_engine
+export start_engine, call, eval_expr, render_figures, wait_for_figures, diagnostics, stop_engine
 
 const FSDA_ROUTINES = [
     :mahalFS,
