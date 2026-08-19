@@ -36,14 +36,22 @@ function stop_engine()
     end
 end
 
-# global eval expr
-function eval_expr(expr; nargout::Integer = 1)
+# Return the global engine, starting it if it is not running yet.
+function _engine()
     if _GLOBAL_ENGINE[] === nothing
         @info "Auto-starting FSDA engine..."
         _GLOBAL_ENGINE[] = start_engine()
     end
-    return eval_expr(_GLOBAL_ENGINE[], expr; nargout = nargout)
+    return _GLOBAL_ENGINE[]
 end
+
+# Global forms: reach MATLAB through the auto-started engine, so scripts do not
+# have to manage a handle alongside the facade functions.
+call(name::AbstractString, args...; kwargs...) =
+    call(_engine(), name, args...; kwargs...)
+
+eval_expr(expr::AbstractString; nargout::Integer = 1) =
+    eval_expr(_engine(), expr; nargout = nargout)
 
 
 # Re-export the mandatory API
