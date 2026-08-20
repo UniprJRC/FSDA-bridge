@@ -53,6 +53,10 @@ call(name::AbstractString, args...; kwargs...) =
 eval_expr(expr::AbstractString; nargout::Integer = 1) =
     eval_expr(_engine(), expr; nargout = nargout)
 
+render_figures() = render_figures(_engine())
+
+wait_for_figures() = wait_for_figures(_engine())
+
 
 # Re-export the mandatory API
 export start_engine, call, eval_expr, render_figures, wait_for_figures, diagnostics, stop_engine
