@@ -50,12 +50,30 @@ end
 export start_engine, call, eval_expr, render_figures, wait_for_figures, diagnostics, stop_engine
 
 const FSDA_ROUTINES = [
+    # Multivariate distance
     :mahalFS,
     :Score,
+    :unibiv,
+    # Robust regression
     :FSR,
     :FSRaddt,
+    :LXS,
+    :MMreg,
+    # Multivariate FS
+    :FSM,
+    :FSMeda,
+    :mcd,
+    # Transformations
+    :Score,
+    :FSRfan,
+    # Clustering
     :tclust,
     :getYahoo
+    :tkmeans,
+    # Graphics
+    :yXplot,
+    :malfwdplot,
+    :boxplotb
 ]
 
 # Generate the facade functions dynamically at compile time
