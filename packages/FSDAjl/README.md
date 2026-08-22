@@ -32,11 +32,11 @@ Pkg.add("FSDA")   # once registered in General
 FSDA.jl calls into an existing Python environment via
 [PythonCall.jl](https://github.com/JuliaPy/PythonCall.jl). You must tell PythonCall to use that environment rather than provisioning its own via Conda. Conda cannot install MATLAB's `matlabengine` for you, and letting PythonCall try will produce confusing errors.
 
+```bash
 export JULIA_CONDAPKG_BACKEND=Null
 export FSDA_DEV_VENV=/path/to/your/venv/bin/python
-
-# or, alternatively:
 export JULIA_PYTHONCALL_EXE=/path/to/your/venv/bin/python
+```
 
 Set these **before** starting Julia / loading the package. FSDA.jl checks `JULIA_CONDAPKG_BACKEND` at load time and will warn loudly if it isn't set to `"Null"`.
 
