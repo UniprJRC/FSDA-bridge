@@ -1,36 +1,28 @@
-# Generic Layer-2 R surface for the shared FSDA engine (spec 018).
+# Package surface for the shared FSDA engine (copied from code/fsda_engine/engine.R).
 #
-# The actual MATLAB/FSDA call stays in the Python engine (code/fsda_engine/engine.py,
-# class FsdaEngine); this file owns reticulate setup and delegates a *routine-agnostic*
-# `fsda_call(handle, name, ...)` straight to the Python `FsdaEngine.call`. Unlike the
-# per-target bridge.R files (one wrapper per routine), this works for ANY FSDA function.
+# The actual MATLAB/FSDA call stays in the bundled Python engine
+# (inst/python/engine.py, class FsdaEngine); this file owns reticulate setup and
+# delegates a *routine-agnostic* `fsda_call(handle, name, ...)` straight to the
+# Python `FsdaEngine.call`, so it works for ANY FSDA function.
 #
 # reticulate with convert = TRUE auto-converts both directions (R matrix <-> numpy,
 # dict <-> named list, str <-> character), so no manual recursive converter is needed.
-# The function is named `fsda_call` (not `call`, which would mask base::call).
+#
+# Difference from the repo script: the engine directory is resolved lazily via
+# system.file() (the script's source()-location walk would error at install time,
+# when no frame carries an ofile and the working directory is the build sandbox).
 
-.engine_dir = local({
-  # Prefer source(".../engine.R") metadata, then fall back to common working dirs.
-  frames = sys.frames()
-  for (i in rev(seq_along(frames))) {
-    ofile = frames[[i]]$ofile
-    if (!is.null(ofile) && nzchar(ofile) && basename(ofile) == "engine.R") {
-      return(normalizePath(dirname(ofile), winslash = "/", mustWork = TRUE))
-    }
+.engine_dir = function() {
+  dir = system.file("python", package = "fsdabridge")
+  if (!nzchar(dir) || !file.exists(file.path(dir, "engine.py"))) {
+    stop("bundled engine.py not found; please reinstall the 'fsdabridge' package.")
   }
-  here = normalizePath(getwd(), winslash = "/", mustWork = TRUE)
-  candidates = c(here, file.path(here, "code", "fsda_engine"))
-  for (candidate in candidates) {
-    if (file.exists(file.path(candidate, "engine.py"))) {
-      return(normalizePath(candidate, winslash = "/", mustWork = TRUE))
-    }
-  }
-  stop("Cannot locate code/fsda_engine/engine.py; source engine.R from the repo or its directory.")
-})
+  normalizePath(dir, winslash = "/", mustWork = TRUE)
+}
 
 .require_reticulate = function() {
   if (!requireNamespace("reticulate", quietly = TRUE)) {
-    stop("R package 'reticulate' is required for spec 018.")
+    stop("R package 'reticulate' is required by fsdabridge.")
   }
   asNamespace("reticulate")
 }
@@ -89,29 +81,69 @@
   paste(as.character(unlist(x, recursive = TRUE, use.names = FALSE)), collapse = " ")
 }
 
+#' Start a reusable MATLAB/FSDA engine session
+#'
+#' Imports the bundled Python engine (`inst/python/engine.py`) through
+#' reticulate and starts a MATLAB engine session with the FSDA toolbox on its
+#' path. Starting MATLAB is expensive (tens of seconds); keep the returned
+#' handle and reuse it for many [fsda_call()] invocations, then release it
+#' with [stop_engine()].
+#'
+#' @param routine Optional name of an FSDA routine whose availability is
+#'   verified at startup (e.g. `"FSR"`). `NULL` skips the check.
+#' @param python Path to the Python interpreter (or virtualenv root) that has
+#'   `matlabengine` installed. Defaults to the `FSDA_DEV_VENV` environment
+#'   variable, then to `python`/`python3` on the `PATH`.
+#' @param fsda_root Path to the FSDA toolbox folder to add to the MATLAB path.
+#'   `NULL` assumes FSDA is already on the MATLAB path (e.g. an installed
+#'   Add-On).
+#' @return An object of class `"fsda_engine"` to pass to [fsda_call()],
+#'   [eval_m()], [diagnostics()] and [stop_engine()].
+#' @examples
+#' \dontrun{
+#' h = start_engine("FSR", fsda_root = "~/FSDA")
+#' out = fsda_call(h, "FSR", y, X, nsamp = 0, intercept = TRUE, plots = 0)
+#' stop_engine(h)
+#' }
+#' @export
 start_engine = function(routine = NULL, python = Sys.getenv("FSDA_DEV_VENV"), fsda_root = NULL) {
-  # Import the shared Python engine and start a reusable MATLAB engine session.
   reticulate = .require_reticulate()
   python = .resolve_python(python)
   .configure_python(reticulate, python)
 
-  # engine.py has a unique module name (not the per-target 'bridge'), so no cache
-  # eviction is needed; still force this dir to the front so the right file loads.
-  module = reticulate$import_from_path("engine", path = .engine_dir, convert = TRUE)
+  engine_dir = .engine_dir()
+  module = reticulate$import_from_path("engine", path = engine_dir, convert = TRUE)
   engine = module$FsdaEngine$start(routine, fsda_root)
 
-  handle = list(module = module, engine = engine, python = python, engine_dir = .engine_dir)
+  handle = list(module = module, engine = engine, python = python, engine_dir = engine_dir)
   class(handle) = "fsda_engine"
   handle
 }
 
+#' Call any FSDA routine through the engine
+#'
+#' Routine-agnostic call: positional `...` become MATLAB positional arguments
+#' (in order), named `...` become MATLAB name/value option pairs. Pass `y` as
+#' an `(n, 1)` matrix when a routine expects a column vector. reticulate
+#' converts R matrices to numpy arrays and the returned MATLAB struct/table to
+#' a named list automatically.
+#'
+#' @param handle Engine handle from [start_engine()].
+#' @param name Name of the FSDA function to call (e.g. `"FSR"`, `"LXS"`,
+#'   `"mahalFS"`).
+#' @param ... Positional arguments, then name/value options for the routine.
+#' @param nargout Number of MATLAB outputs to request (default 1).
+#' @param echo_output If `TRUE`, echo MATLAB console output.
+#' @param options Optional named list merged into the name/value options.
+#' @return The routine's output converted to R (named list for structs/tables,
+#'   matrix/vector for numeric arrays); a list of outputs when `nargout > 1`.
+#' @examples
+#' \dontrun{
+#' out = fsda_call(h, "FSR", y, X, nsamp = 0, intercept = TRUE, plots = 0)
+#' lxs = fsda_call(h, "LXS", y, X, intercept = TRUE, plots = 0, msg = 0)
+#' }
+#' @export
 fsda_call = function(handle, name, ..., nargout = 1, echo_output = FALSE, options = NULL) {
-  # Routine-agnostic call: positional `...` -> MATLAB positionals (in order), named
-  # `...` -> MATLAB name/value pairs. e.g.
-  #   fsda_call(h, "mahalFS", Y, MU, SIGMA)
-  #   fsda_call(h, "Score", y, X, la = la, intercept = TRUE)
-  # Pass y as an (n, 1) matrix when a routine wants a column. reticulate converts R
-  # matrices <-> numpy and the returned dict <-> named list automatically.
   .validate_handle(handle)
   dots = list(...)
   nm = names(dots)
@@ -127,32 +159,68 @@ fsda_call = function(handle, name, ..., nargout = 1, echo_output = FALSE, option
   do.call(args[[1]], args[-1])
 }
 
+#' Evaluate a raw MATLAB expression
+#'
+#' Evaluates `expr` in the engine's MATLAB workspace (table/timetable aware)
+#' and returns the converted result.
+#'
+#' @inheritParams fsda_call
+#' @param expr A MATLAB expression as a string.
+#' @return The expression's value converted to R.
+#' @examples
+#' \dontrun{
+#' eval_m(h, "1+1")
+#' }
+#' @export
 eval_m = function(handle, expr, nargout = 1) {
-  # Evaluate a MATLAB expression through the engine (table/timetable aware).
   .validate_handle(handle)
   handle$engine$eval(expr, nargout = as.integer(nargout))
 }
 
+#' Render pending MATLAB figures
+#'
+#' @inheritParams fsda_call
+#' @return Invisibly `NULL`.
+#' @export
 render_figures = function(handle) {
   .validate_handle(handle)
   handle$engine$render_figures()
   invisible(NULL)
 }
 
+#' Block until all open MATLAB figures are closed
+#'
+#' Driven MATLAB-side via `uiwait`; useful after a plotting routine so the
+#' user can inspect forward-search plots before the script continues.
+#'
+#' @inheritParams fsda_call
+#' @return Invisibly `NULL`.
+#' @export
 wait_for_figures = function(handle) {
-  # Block until the user closes all open MATLAB figures (driven MATLAB-side via uiwait).
   .validate_handle(handle)
   handle$engine$wait_for_figures()
   invisible(NULL)
 }
 
+#' Stop the MATLAB engine session
+#'
+#' MATLAB engine startup is expensive, so callers control shutdown explicitly.
+#'
+#' @inheritParams fsda_call
+#' @return Invisibly `NULL`.
+#' @export
 stop_engine = function(handle) {
-  # MATLAB engine startup is expensive, so callers control shutdown explicitly.
   .validate_handle(handle)
   handle$engine$stop()
   invisible(NULL)
 }
 
+#' Diagnostics for the running engine session
+#'
+#' @inheritParams fsda_call
+#' @return A named list with the R, reticulate, Python, MATLAB and
+#'   matlabengine versions plus the resolved engine paths.
+#' @export
 diagnostics = function(handle) {
   .validate_handle(handle)
   reticulate = .require_reticulate()
