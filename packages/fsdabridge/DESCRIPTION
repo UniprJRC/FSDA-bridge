@@ -1,0 +1,26 @@
+Package: fsdabridge
+Type: Package
+Title: Bridge to the FSDA MATLAB Toolbox for Robust Statistics
+Version: 0.0.0.9000
+Authors@R:
+    person("Nour", "Alterri", email = "nourhm.alterri@studenti.unipr.it",
+           role = c("aut", "cre"))
+Description: A thin R surface over the shared FSDA Python engine. Calls any
+    routine of the FSDA MATLAB toolbox (forward search regression, robust
+    estimators, robust clustering, and more) through 'reticulate' and the
+    MATLAB Engine API for Python, with routine-agnostic marshalling of
+    matrices, structs, tables and cell arrays into R objects. MATLAB, the
+    FSDA toolbox and the 'matlabengine' Python package are required at
+    runtime only: the package installs, loads and passes its offline checks
+    without them.
+License: EUPL (>= 1.2)
+Encoding: UTF-8
+Imports:
+    reticulate
+Suggests:
+    testthat (>= 3.0.0)
+SystemRequirements: MATLAB (>= R2025b), FSDA MATLAB toolbox, Python (>=
+    3.9), matlabengine (Python package matching the MATLAB release)
+Config/testthat/edition: 3
+Roxygen: list(markdown = TRUE)
+Config/roxygen2/version: 8.0.0
