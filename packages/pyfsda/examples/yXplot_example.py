@@ -1,31 +1,35 @@
-#!/usr/bin/env python3
-"""yXplot example: FSR on stack-loss data."""
+"""yXplot example: Forward Search Regression (FSR) on stack-loss data.
+
+This example demonstrates running Forward Search for outlier detection on the stack-loss dataset
+and visualizing variable y against predictors X using yXplot.
+
+see also:
+yXplot documentation: https://rosa.unipr.it/FSDA/yXplot.html
+FSR documentation: https://rosa.unipr.it/FSDA/FSR.html
+FSDA datasets information: https://rosa.unipr.it/FSDA/datasets_reg.html
+"""
+
 import numpy as np
-from pyfsda import FsdaEngine
+import pyfsda
 
-eng = FsdaEngine.start(check_version=False)
+eng = pyfsda.start(check_version=False)
 
-data = eng.eval("load('stack_loss.mat')")
+data = pyfsda.load("stack_loss.mat")
 
-if isinstance(data, dict):
-    table = data['stack_loss']
-    colnames = table["VariableNames"]
-    arr = np.column_stack([np.asarray(table["data"][c]) for c in colnames])
-else:
-    arr = np.asarray(data)
+table = data['stack_loss']
+arr = np.column_stack(list(table["data"].values()))
+
 
 y = arr[:, -1].reshape(-1, 1)
 X = arr[:, :-1]
-print(f"Loaded stack-loss data: y={y.shape}, X={X.shape}")
 
-out = eng.call('FSR', y, X, 'plots', 0)
+out = pyfsda.FSR(y, X, 'plots', 0)
 print("Outliers:", np.asarray(out['outliers']).ravel())
 print("Beta:", np.asarray(out['beta']).ravel())
 
-eng.call('yXplot', y, X)
+pyfsda.yXplot(y, X)
+
 eng.render_figures()
-print("Plot opened. Close it to exit.")
 eng.wait_for_figures()
 
-eng.stop()
-print("Engine stopped.")
+pyfsda.stop()
