@@ -1,23 +1,28 @@
-#!/usr/bin/env python3
-"""boxplotb example with FSDA stars data."""
+"""boxplotb example: Bivariate boxplot on stars dataset.
+
+Computes and visualizes bivariate boxplots to identify robust location,
+scatter, and bivariate outliers.
+
+see also:
+boxplotb documentation: https://rosa.unipr.it/FSDA/boxplotb.html
+FSDA datasets information: https://rosa.unipr.it/FSDA/datasets_reg.html
+"""
+
 import numpy as np
-from pyfsda import FsdaEngine
+import pyfsda
 
-eng = FsdaEngine.start(check_version=False)
+eng = pyfsda.start(check_version=False)
 
-data = eng.eval("load('stars.txt')")
-arr = np.asarray(data)
+data = pyfsda.load("stars.txt")
 
-out = eng.call('boxplotb', arr)
-print("Output keys:", list(out.keys()))
-print("Cent shape:", np.asarray(out['cent']).shape)
+out = pyfsda.boxplotb(data)
+pyfsda.xlabel('Log effective surface temperature')
+pyfsda.ylabel('Log light intensity')
+
 outliers = np.asarray(out['outliers']).ravel().astype(int)
 print("Outliers:", outliers.tolist())
-print("Spl shape:", np.asarray(out['Spl']).shape)
 
 eng.render_figures()
-print("Plot opened. Close it to exit.")
 eng.wait_for_figures()
 
-eng.stop()
-print("Engine stopped.")
+pyfsda.stop()
