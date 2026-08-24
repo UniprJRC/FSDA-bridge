@@ -1,30 +1,29 @@
-#!/usr/bin/env python3
-"""malfwdplot example: FSMeda on swiss banknotes data."""
-import numpy as np
-from pyfsda import FsdaEngine
+"""malfwdplot example: Forward Search Monitoring of Mahalanobis Distances on Swiss Banknotes Dataset.
 
-eng = FsdaEngine.start(check_version=False)
+This example Computes Forward Search multivariate exploratory data analysis (FSMeda) starting from
+an initial subset chosen via unibiv, and visualizes the forward trajectories of
+Mahalanobis distances.
 
-data = eng.eval("load('swiss_banknotes.txt')")
+see also:
+malfwdplot documentation: https://rosa.unipr.it/FSDA/malfwdplot.html
+FSMeda documentation: https://rosa.unipr.it/FSDA/FSMeda.html
+FSDA datasets information: https://rosa.unipr.it/FSDA/datasets_mv.html
+"""
 
-if isinstance(data, dict):
-    table = data['swiss_banknotes']
-    colnames = table["VariableNames"]
-    arr = np.column_stack([np.asarray(table["data"][c]) for c in colnames])
-else:
-    arr = np.asarray(data)
+import pyfsda
 
-fre = eng.call('unibiv', arr)
+eng = pyfsda.start(check_version=False)
+
+data = pyfsda.load("swiss_banknotes.txt")
+
+fre = pyfsda.unibiv(data)
 m0 = 20
 bs = fre[:m0, 0].reshape(-1, 1)
-out = eng.call('FSMeda', arr, bs)
-print("MMD shape:", np.asarray(out['mmd']).shape)
+out = pyfsda.FSMeda(data, bs)
 
-eng.call("malfwdplot", out, nargout=0)
+pyfsda.malfwdplot(out, nargout=0)
 
 eng.render_figures()
-print("Plot window open. Close it to exit.")
 eng.wait_for_figures()
 
-eng.stop()
-print("Engine stopped.")
+pyfsda.stop()
