@@ -1,16 +1,27 @@
-#!/usr/bin/env python3
+"""tkmeans (Trimmed k-Means) on the geyser2 dataset.
+
+tkmeans partitions data into k clusters while trimming a specified proportion
+(alpha) of potential outliers.
+Input Arguments:
+   - Y data matrix
+   - K number of groups
+   - alpha global trimming level
+
+see also:
+tkmeans documentation: https://rosa.unipr.it/FSDA/tkmeans.html
+FSDA datasets information: https://rosa.unipr.it/FSDA/datasets_clu.html
+"""
 
 import pyfsda
 
-eng = pyfsda.FsdaEngine.start(
-    "tkmeans",check_version=False
-)
+eng = pyfsda.start(check_version=False)
 
-eng.call("rng", 1, nargout=0)
+pyfsda.rng(42, nargout=0)
 
-Y = eng.call("load", "geyser2.txt")
+Y = pyfsda.load("geyser2.txt")
 
-out = eng.call("tkmeans", Y, 3, 0.03)
+# clustering to 3 groups and trimming level of 3 percent
+out = pyfsda.tkmeans(Y, 3, 0.03, 'plots', 1)
 
 print("Objective function:")
 print(out["obj"])
@@ -21,4 +32,7 @@ print(out["siz"])
 print("\nWeights:")
 print(out["weights"])
 
-eng.stop()
+eng.render_figures()
+eng.wait_for_figures()
+
+pyfsda.stop()
