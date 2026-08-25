@@ -7,3 +7,8 @@ export(render_figures)
 export(start_engine)
 export(stop_engine)
 export(wait_for_figures)
+export(fsda_tclust)
+export(fsda_kmeans)
+S3method(print, fsda_tclust)
+S3method(print, fsda_kmeans)
+
