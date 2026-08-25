@@ -64,14 +64,32 @@ from .frames import apply_frames, dataframe_to_table_dict, is_dataframe
 # call()). The rare case where an FSDA option's name does collide with one of these
 # reserved words is handled via the `options` dict:
 #     eng.call("FSR", y, X, options={"nargout": ...})
-_RESERVED_CALL_KWARGS = ("nargout", "echo_output", "options", "frames")
+_RESERVED_CALL_KWARGS = ("nargout", "echo_output", "options", "frames", "store")
 
 # call()/eval() execute through the MATLAB workspace (so table/timetable outputs --
 # which the engine cannot return directly -- can be decomposed MATLAB-side). The
 # function name and option names are interpolated into an eval command, so they are
 # validated against this allow-list first (an injection guard, like getYahoo).
 _IDENT_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
+_REF_RE   = re.compile(r"^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)*$")
 
+class WorkspaceRef:
+    """minimal token referencing a MATLAB workspace variable."""
+    __slots__ = ("name",)
+
+    def __init__(self, name: str):
+        if not _REF_RE.match(name):
+            raise ValueError(f"invalid workspace variable name: {name!r}")
+        self.name = name
+
+    def __repr__(self):
+        return f"WorkspaceRef({self.name!r})"
+
+    def field(self, name: str) -> "WorkspaceRef":
+        """Access a struct field: WorkspaceRef('out').field('x') → WorkspaceRef('out.x')."""
+        if not _IDENT_RE.match(name):
+            raise ValueError(f"invalid field name: {name!r}")
+        return WorkspaceRef(f"{self.name}.{name}")
 
 def _cellstr_list(raw) -> list:
     """MATLAB cellstr -> Python list[str]. The engine returns a 1-element cell as a
@@ -230,7 +248,8 @@ class FsdaEngine:
 
     # --- the generic call ----------------------------------------------------
     def call(self, name: str, *args, nargout: int = 1, echo_output: bool = False,
-             options: dict | None = None, frames: bool = False, **kwargs):
+             options: dict | None = None, frames: bool = False,
+             store: str | None = None, **kwargs):
         """Call FSDA function `name` generically and return plain Python.
 
         Positional `args` are marshalled with `to_matlab` and passed in order.
@@ -271,18 +290,31 @@ class FsdaEngine:
 
         in_names, opt_tokens, temp = [], [], []
         for i, a in enumerate(args):
-            vn = f"fe_in{i}"
-            self._set_input_var(a, vn)            # dict->struct / DataFrame->table / array / ...
-            in_names.append(vn)
-            temp.append(vn)
+            if isinstance(a, WorkspaceRef):
+                in_names.append(a.name)    # Already in MATLAB workspace
+            else:
+                vn = f"fe_in{i}"
+                self._set_input_var(a, vn)            # dict->struct / DataFrame->table / array / ...
+                in_names.append(vn)
+                temp.append(vn)
         for key, value in pairs.items():
-            vn = f"fe_opt_{key}"
-            self._set_input_var(value, vn)        # option value (may itself be a struct/table)
-            opt_tokens.append(f"'{key}',{vn}")   # 'name', tempvar
-            temp.append(vn)
+            if isinstance(value, WorkspaceRef):
+                opt_tokens.append(f"'{key}',{value.name}")
+            else:
+                vn = f"fe_opt_{key}"
+                self._set_input_var(value, vn)        # option value (may itself be a struct/table)
+                opt_tokens.append(f"'{key}',{vn}")   # 'name', tempvar
+                temp.append(vn)
 
-        out_names = [f"fe_out{j}" for j in range(nargout)]
-        temp.extend(out_names)
+        if store is not None:
+            if not _IDENT_RE.match(store):
+                raise ValueError(f"unsafe / malformed store name: {store!r}")
+            out_names = [store if j == 0 else f"{store}_{j}" for j in range(nargout)]
+            # refs should not be added to temp, to prevent automatic cleanup
+        else:
+            out_names = [f"fe_out{j}" for j in range(nargout)]
+            temp.extend(out_names)
+
         rhs = ",".join(in_names + opt_tokens)
         if nargout == 0:
             cmd = f"{name}({rhs});"
@@ -295,6 +327,9 @@ class FsdaEngine:
             self._eval_cmd(cmd, echo_output)
             if nargout == 0:
                 return None
+            if store is not None:
+                refs = [WorkspaceRef(vn) for vn in out_names]
+                return refs[0] if nargout == 1 else tuple(refs)
             results = [self._marshal_var(vn) for vn in out_names]
         finally:
             self._clear(temp)
@@ -580,3 +615,32 @@ class FsdaEngine:
             "fh = findall(groot, 'Type', 'figure'); end",
             nargout=0,
         )
+
+    def fetch(self, ref, *, frames=False):
+        name = ref.name if isinstance(ref, WorkspaceRef) else ref
+        if not _REF_RE.match(name):
+            raise ValueError(f"unsafe / malformed variable name: {name!r}")
+        if "." in name:
+            tmp = "fe_fetch_tmp"
+            self.eng.eval(f"{tmp} = {name};", nargout=0)
+            try:
+                result = self._marshal_var(tmp)
+            finally:
+                self._clear([tmp])
+        else:
+            result = self._marshal_var(name)
+        if frames:
+            result = apply_frames(result)
+        return result
+
+    def clear(self, *refs):
+        """Remove stored workspace variables.
+
+        Public wrapper around private _clear() method. Adds injection validation
+        and accepts both WorkspaceRef or plain strings
+        """
+        names = [r.name if isinstance(r, WorkspaceRef) else r for r in refs]
+        for n in names:
+            if not _IDENT_RE.match(n):
+                raise ValueError(f"unsafe / malformed variable name: {n!r}")
+        self._clear(names)

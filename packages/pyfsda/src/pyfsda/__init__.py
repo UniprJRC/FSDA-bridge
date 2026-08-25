@@ -36,7 +36,7 @@ from __future__ import annotations
 import atexit
 import sys
 
-from .engine import FsdaEngine, from_matlab, to_matlab
+from .engine import FsdaEngine, from_matlab, to_matlab, WorkspaceRef
 from .frames import is_table_dict, to_dataframe
 
 __version__ = "0.5.0"
@@ -45,6 +45,7 @@ __all__ = [
     "FsdaEngine", "to_matlab", "from_matlab",
     "to_dataframe", "is_table_dict",
     "start", "stop", "engine", "__version__",
+    "WorkspaceRef", "fetch", "clear",
 ]
 
 # --- shared lazily-started engine (backs the functional pyfsda.<name>(...) surface) ----
@@ -100,6 +101,14 @@ def stop() -> None:
 
 
 atexit.register(stop)
+
+def fetch(ref, *, frames=False):
+    """Pull a stored workspace variable to Python."""
+    return engine().fetch(ref, frames=frames)
+
+def clear(*refs):
+    """Remove stored workspace variables."""
+    engine().clear(*refs)
 
 
 def _notify_latest_fsda() -> None:
