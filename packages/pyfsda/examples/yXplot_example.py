@@ -23,7 +23,7 @@ arr = np.column_stack(list(table["data"].values()))
 y = arr[:, -1].reshape(-1, 1)
 X = arr[:, :-1]
 
-out = pyfsda.FSR(y, X, 'plots', 0)
+out = pyfsda.FSR(y, X, plots=0)
 print("Outliers:", np.asarray(out['outliers']).ravel())
 print("Beta:", np.asarray(out['beta']).ravel())
 

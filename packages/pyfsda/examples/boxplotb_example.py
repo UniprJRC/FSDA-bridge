@@ -4,8 +4,8 @@ Computes and visualizes bivariate boxplots to identify robust location,
 scatter, and bivariate outliers.
 
 see also:
-boxplotb documentation: https://rosa.unipr.it/FSDA/boxplotb.html
-FSDA datasets information: https://rosa.unipr.it/FSDA/datasets_reg.html
+    boxplotb documentation: https://rosa.unipr.it/FSDA/boxplotb.html
+    FSDA datasets information: https://rosa.unipr.it/FSDA/datasets_reg.html
 """
 
 import numpy as np

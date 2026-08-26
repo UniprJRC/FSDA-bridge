@@ -2,13 +2,10 @@
 swiss banknotes dataset by Flury and Riedwyl (1988).
 
 FSMeda performs forward search in multivariate analysis with exploratory data analysis purposes
-Input Arguments:
-   - Y data matrix
-   - bsb List of units forming the initial subset
 
 see also:
-FSMeda documentation: https://rosa.unipr.it/FSDA/FSMeda.html
-FSDA datasets information: https://rosa.unipr.it/FSDA/datasets_mv.html
+    FSMeda documentation: https://rosa.unipr.it/FSDA/FSMeda.html
+    FSDA datasets information: https://rosa.unipr.it/FSDA/datasets_mv.html
 """
 
 import numpy as np

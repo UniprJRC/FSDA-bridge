@@ -1,5 +1,5 @@
 """FSR (Forward Search Regression) on FSDA's stars benchmark dataset by Humpreys (1978),
-consists of 47 observations about the light intensity (y2) and the superfice temperature (y1)
+consists of 47 observations about the light intensity (y2) and the surface temperature (y1)
 
 FSR performs forward search in linear regression to detect outliers.
 

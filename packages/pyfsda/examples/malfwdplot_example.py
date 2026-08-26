@@ -1,13 +1,13 @@
 """malfwdplot example: Forward Search Monitoring of Mahalanobis Distances on Swiss Banknotes Dataset.
 
-This example Computes Forward Search multivariate exploratory data analysis (FSMeda) starting from
+This example computes Forward Search multivariate exploratory data analysis (FSMeda) starting from
 an initial subset chosen via unibiv, and visualizes the forward trajectories of
 Mahalanobis distances.
 
 see also:
-malfwdplot documentation: https://rosa.unipr.it/FSDA/malfwdplot.html
-FSMeda documentation: https://rosa.unipr.it/FSDA/FSMeda.html
-FSDA datasets information: https://rosa.unipr.it/FSDA/datasets_mv.html
+    malfwdplot documentation: https://rosa.unipr.it/FSDA/malfwdplot.html
+    FSMeda documentation: https://rosa.unipr.it/FSDA/FSMeda.html
+    FSDA datasets information: https://rosa.unipr.it/FSDA/datasets_mv.html
 """
 
 import pyfsda

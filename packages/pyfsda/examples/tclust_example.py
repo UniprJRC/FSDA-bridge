@@ -4,8 +4,8 @@ tclust partitions data into k clusters while trimming a specified proportion
 (alpha) of potential outliers.
 
 see also:
-tclust documentation: https://rosa.unipr.it/FSDA/tclust.html
-FSDA datasets information: https://rosa.unipr.it/FSDA/datasets_clu.html
+    tclust documentation: https://rosa.unipr.it/FSDA/tclust.html
+    FSDA datasets information: https://rosa.unipr.it/FSDA/datasets_clu.html
 """
 
 import pyfsda
@@ -22,7 +22,7 @@ k = 3
 alpha = 0.1
 restrfactor = 10000
 
-out = pyfsda.tclust(Y, k, alpha, restrfactor, 'plots', 1)
+out = pyfsda.tclust(Y, k, alpha, restrfactor, plots=1)
 
 print("\nObjective function:")
 print(out["obj"])
