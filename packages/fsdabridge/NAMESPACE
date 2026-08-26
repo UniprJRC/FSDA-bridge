@@ -3,6 +3,7 @@
 export(diagnostics)
 export(eval_m)
 export(fsda_call)
+export(mahalFS)
 export(render_figures)
 export(start_engine)
 export(stop_engine)
