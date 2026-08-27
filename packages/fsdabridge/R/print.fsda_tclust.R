@@ -1,3 +1,13 @@
+#' Print method for fsda_tclust objects
+#'
+#' Displays a summary of a \code{\link{fsda_tclust}} result: observation and
+#' variable counts, number of clusters, trim level, cluster sizes (with
+#' trimmed units labeled separately), and the objective function value.
+#'
+#' @param x An object of class \code{"fsda_tclust"}.
+#' @param ... Further arguments passed to or from other methods (unused).
+#'
+#' @return Invisibly returns \code{x}.
 #' @export
 print.fsda_tclust <- function(x, ...) {
     cat("\n")
