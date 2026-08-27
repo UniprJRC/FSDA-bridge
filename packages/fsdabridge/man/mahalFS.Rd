@@ -2,10 +2,7 @@
 % Please edit documentation in R/mahalFS.R
 \name{mahalFS}
 \alias{mahalFS}
-\title{Mahalanobis Distance (mahalFS)
-Thin wrapper around \code{fsda_call()} for the FSDA \code{mahalFS} routine —
-computes the Mahalanobis distance of each observation in \code{Y} from a
-given mean vector \code{MU} and covariance matrix \code{SIGMA}.}
+\title{Mahalanobis Distance (mahalFS)}
 \usage{
 mahalFS(handle, Y, MU, SIGMA, ...)
 }
@@ -26,7 +23,6 @@ The Mahalanobis distances for each observation, as a numeric
 vector.
 }
 \description{
-Mahalanobis Distance (mahalFS)
 Thin wrapper around \code{fsda_call()} for the FSDA \code{mahalFS} routine —
 computes the Mahalanobis distance of each observation in \code{Y} from a
 given mean vector \code{MU} and covariance matrix \code{SIGMA}.
