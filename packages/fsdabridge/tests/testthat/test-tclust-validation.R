@@ -31,6 +31,11 @@ match_labels <- function(mu_r, mu_matlab) {
 }
 
 test_that("TCLUST matches MATLAB benchmark", {
+    skip_if_not(
+        identical(Sys.getenv("FSDA_LIVE"), "1"),
+        "set FSDA_LIVE=1 to run the live MATLAB/FSDA test"
+    )
+
     # -------------------------------------------------------------------
     # Load data
     # -------------------------------------------------------------------

@@ -23,6 +23,11 @@ match_labels_km <- function(mu_r, mu_matlab) {
 }
 
 test_that("KMEANS matches MATLAB benchmark", {
+    skip_if_not(
+        identical(Sys.getenv("FSDA_LIVE"), "1"),
+        "set FSDA_LIVE=1 to run the live MATLAB/FSDA test"
+    )
+
     data_path <- system.file("extdata", "geyser2.txt", package = "fsdabridge")
     Y <- as.matrix(read.table(data_path, header = FALSE))
     storage.mode(Y) <- "double"
