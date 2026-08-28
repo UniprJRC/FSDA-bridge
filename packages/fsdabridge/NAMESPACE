@@ -2,6 +2,7 @@
 
 S3method(print,fsda_kmeans)
 S3method(print,fsda_tclust)
+export(FSM)
 export(Score)
 export(boxplotb)
 export(diagnostics)
