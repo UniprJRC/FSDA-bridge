@@ -1,6 +1,3 @@
-library(testthat)
-library(fsdabridge)
-
 # ---------------------------------------------------------------------------
 # Helper: find the permutation of R's cluster labels that best aligns
 # result$muopt with matlab_mu (tclust-type algorithms have no canonical
@@ -141,7 +138,7 @@ test_that("TCLUST matches MATLAB benchmark", {
     expect_equal(
         siz_aligned[, 2:3],
         matlab_siz[, 2:3],
-        check.attributes = FALSE
+        ignore_attr = TRUE
     )
 
     expect_equal(

@@ -1,7 +1,7 @@
 Package: fsdabridge
 Type: Package
 Title: Bridge to the FSDA MATLAB Toolbox for Robust Statistics
-Version: 0.0.0.9000
+Version: 0.1.0
 Authors@R:
     person("Nour", "Alterri", email = "nourhm.alterri@studenti.unipr.it",
            role = c("aut", "cre"))
@@ -15,9 +15,8 @@ Description: A thin R surface over the shared FSDA Python engine. Calls any
     without them.
 License: EUPL (>= 1.2)
 Encoding: UTF-8
-Imports:
-    reticulate
 Suggests:
+    reticulate,
     testthat (>= 3.0.0)
 SystemRequirements: MATLAB (>= R2025b), FSDA MATLAB toolbox, Python (>=
     3.9), matlabengine (Python package matching the MATLAB release)

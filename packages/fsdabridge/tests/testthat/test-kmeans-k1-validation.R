@@ -1,6 +1,3 @@
-library(testthat)
-library(fsdabridge)
-
 match_labels_km <- function(mu_r, mu_matlab) {
     k <- nrow(mu_r)
     perm_matrix <- t(expand.grid(rep(list(seq_len(k)), k)))

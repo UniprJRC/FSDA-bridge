@@ -8,6 +8,11 @@
 #'
 #' @return An object of class \code{"fsda_tclust"}
 #'
+#' @examples
+#' \dontrun{
+#' result <- fsda_tclust(data, k = 3, alpha = 0.1, restrfactor = 10000)
+#' print(result)
+#' }
 #' @export
 fsda_tclust <- function(
   data,

@@ -53,7 +53,7 @@
   bin_python = file.path(python, "bin", "python")
   pyvenv_cfg = file.path(python, "pyvenv.cfg")
 
-  if (file.exists(python)) {
+  if (file.exists(python) && !dir.exists(python)) {
     reticulate$use_python(python, required = TRUE)
   } else if (dir.exists(python) && file.exists(pyvenv_cfg)) {
     reticulate$use_virtualenv(python, required = TRUE)

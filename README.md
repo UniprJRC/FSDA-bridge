@@ -310,14 +310,14 @@ cannot be read (so the check reports it as not-an-Add-On rather than comparing v
 # macOS / Linux — from the repo root
 python3 -m venv .venv && source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install numpy "matlabengine==26.1.*"   # 26.1.* pairs with MATLAB R2026a — match yours
+python -m pip install "numpy<2" "matlabengine==26.1.*"   # 26.1.* pairs with MATLAB R2026a — match yours
 ```
 
 ```powershell
 # Windows PowerShell
 python -m venv .venv; .venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
-python -m pip install numpy "matlabengine==26.1.*"   # 26.1.* pairs with MATLAB R2026a — match yours
+python -m pip install "numpy<2" "matlabengine==26.1.*"   # 26.1.* pairs with MATLAB R2026a — match yours
 ```
 
 For the Julia and R gates, point `FSDA_DEV_VENV` at that same interpreter so PythonCall / reticulate
