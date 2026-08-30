@@ -54,20 +54,56 @@
   pyvenv_cfg = file.path(python, "pyvenv.cfg")
 
   if (file.exists(python) && !dir.exists(python)) {
-    reticulate$use_python(python, required = TRUE)
+    target = python
+    action = function() reticulate$use_python(python, required = TRUE)
   } else if (dir.exists(python) && file.exists(pyvenv_cfg)) {
-    reticulate$use_virtualenv(python, required = TRUE)
+    target = if (file.exists(bin_python)) bin_python else if (file.exists(scripts_python)) scripts_python else python
+    action = function() reticulate$use_virtualenv(python, required = TRUE)
   } else if (file.exists(root_python)) {
-    reticulate$use_python(root_python, required = TRUE)
+    target = root_python
+    action = function() reticulate$use_python(root_python, required = TRUE)
   } else if (file.exists(scripts_python)) {
-    reticulate$use_python(scripts_python, required = TRUE)
+    target = scripts_python
+    action = function() reticulate$use_python(scripts_python, required = TRUE)
   } else if (file.exists(bin_python)) {
-    reticulate$use_python(bin_python, required = TRUE)
+    target = bin_python
+    action = function() reticulate$use_python(bin_python, required = TRUE)
   } else {
     stop(paste0(
       "Python venv or executable not found: ", python,
       ". Set FSDA_DEV_VENV to the project venv or a Python executable with matlabengine."
     ))
+  }
+
+  .warn_if_bound_elsewhere(reticulate, target)
+
+  action()
+}
+
+.warn_if_bound_elsewhere = function(reticulate, target) {
+  # reticulate binds the Python interpreter once per R session; a second
+  # start_engine() call with a different path silently keeps using the old
+  # one. py_available(initialize = FALSE) checks without forcing a bind.
+  if (!isTRUE(reticulate$py_available(initialize = FALSE))) {
+    return(invisible(NULL))
+  }
+
+  bound = tryCatch(reticulate$py_config()$python, error = function(e) NA_character_)
+  if (is.na(bound) || !nzchar(bound)) {
+    return(invisible(NULL))
+  }
+
+  bound_norm = normalizePath(bound, winslash = "/", mustWork = FALSE)
+  target_norm = normalizePath(target, winslash = "/", mustWork = FALSE)
+
+  if (!identical(bound_norm, target_norm)) {
+    warning(
+      "reticulate is already bound to a different Python interpreter (",
+      bound_norm, ") than requested (", target_norm, "). ",
+      "Switching interpreters requires a fresh R session; this call will ",
+      "keep using the already-bound interpreter.",
+      call. = FALSE
+    )
   }
 }
 
