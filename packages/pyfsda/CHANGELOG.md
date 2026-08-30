@@ -4,7 +4,25 @@ All notable changes to `pyfsda` are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
-## [0.4.0] — unreleased
+## [0.5.0] — 2026-08-03
+
+### Added
+- **Python dict → MATLAB struct input marshalling** (spec 020). A `dict` argument (or option value) now
+  crosses as a MATLAB `struct` — recursively: nested `dict` → struct, `list[str]` → cellstr, other lists
+  → cell, numbers/arrays/strings via the usual rules. This makes struct-consuming FSDA routines callable
+  with plain Python objects: an FSDA result `dict` (e.g. from `FSReda`) can be handed straight back into a
+  plot, and option structs like `fground` / `databrush` are ordinary dicts. New example
+  `examples/resfwdplot_brush_example.py` (interactive Forward-Search persistent brushing) uses it.
+- New example `examples/grpstatsFS_pandas_example.py` — a full **table in → table out** pandas round trip
+  (`grpstatsFS`: a numeric DataFrame of observations → a labelled DataFrame of per-variable statistics).
+
+### Fixed
+- **Nested tables now honor the pandas view** (spec 021). A MATLAB `table` nested inside a returned
+  `struct` (e.g. `corrNominal`'s `Ntable` / `ConfLimtable` / …) is no longer flattened to a bare
+  `ndarray` with its labels dropped. It now marshals to the neutral table-dict by default — like a
+  top-level table — and to a `pandas.DataFrame` (labels preserved) under `frames=True`.
+
+## [0.4.0] — 2026-07-27
 
 ### Added
 - **Optional pandas view at the Python boundary** (`pip install pyfsda[pandas]`, spec 019). pandas stays

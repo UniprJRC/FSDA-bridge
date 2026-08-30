@@ -84,6 +84,13 @@ decoded MATLAB-side.
 Conventions: a 1-D input crosses as a MATLAB **row** (pass an `(n, 1)` array for a column); outputs
 keep MATLAB's natural shape (no silent reshape); MATLAB indices stay **1-based**.
 
+**Passing structures in** — the boundary also marshals the other way, so a struct-consuming FSDA
+routine can be called with plain Python objects: a `dict` → MATLAB `struct` (recursively), a `list[str]`
+→ cellstr, other `list`s → cell, and numbers/arrays/strings via the usual rules. This makes results
+round-trip: an FSDA result `dict` (e.g. from `FSReda`) can be handed straight back to a plot, and option
+structs like `fground` / `databrush` are just Python dicts — see
+[`examples/resfwdplot_brush_example.py`](examples/resfwdplot_brush_example.py).
+
 Reserved keywords consumed by the bridge are only `nargout`, `echo_output`, `options`, and `frames`;
 every other keyword is forwarded to MATLAB (so FSDA's own `msg` option passes straight through).
 `echo_output=True` tees MATLAB's stdout/stderr to your terminal.
@@ -103,6 +110,11 @@ remains the cross-language contract):
 
 Requesting `frames=True` (or passing a DataFrame) without pandas installed raises a clear
 `pip install pyfsda[pandas]` error.
+
+For a full **table in → table out** round trip in one call, see
+[`examples/grpstatsFS_pandas_example.py`](examples/grpstatsFS_pandas_example.py): a numeric DataFrame
+goes into `grpstatsFS` and a labelled DataFrame of per-variable statistics (mean, median, std, MAD,
+skewness, medcouple) comes back via `frames=True`.
 
 On the **first `pyfsda.<name>(...)` call**, pyfsda also prints (once, best-effort) the **latest FSDA
 release available on GitHub**, so you can check your install is current. `FsdaEngine.start()`

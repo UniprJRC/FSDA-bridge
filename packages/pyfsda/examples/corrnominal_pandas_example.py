@@ -64,14 +64,23 @@ assert abs(chi2 - chi2_ref) < 1e-9, (chi2, chi2_ref)
 assert abs(cramer - cramer_ref) < 1e-9, (cramer, cramer_ref)
 print(f"\nnumpy oracle agrees within 1e-9  (chi2={chi2_ref:.4f}, V={cramer_ref:.4f}).  PASS")
 
-# --- output-side pandas view: table fields come back as DataFrames with frames=True -----
+# --- output-side pandas view --------------------------------------------------------------
+# corrNominal returns a *struct*; several of its fields are MATLAB tables (Ntable,
+# ConfLimtable, ...). With frames=True those *nested* table fields come back as pandas
+# DataFrames with their labels preserved (not bare arrays).
 out_f = pyfsda.corrNominal(N, dispresults=False, frames=True)
-ntable = out_f.get("Ntable")
-if hasattr(ntable, "columns"):                       # a pandas.DataFrame
-    print("\nout['Ntable'] as a DataFrame (labels preserved on the way back):")
-    print(ntable)
-else:
-    print("\n(out['Ntable'] came back as a plain array on this MATLAB release; "
-          "the input labels were still used by corrNominal above.)")
+
+frame_fields = [k for k, v in out_f.items() if hasattr(v, "columns")]   # the DataFrame fields
+print("\nStruct fields returned as pandas DataFrames (frames=True):")
+print("  " + ", ".join(frame_fields))
+
+ntable = out_f["Ntable"]        # the contingency table echoed back -- now a labeled DataFrame
+print("\nout['Ntable'] as a DataFrame -- same row/column labels as the input:")
+print(ntable)
+
+# round-trip check: Ntable is the input contingency table, so it must equal `counts`.
+assert set(rows).issubset(ntable.index) and set(cols).issubset(ntable.columns)
+assert np.allclose(ntable.loc[rows, cols].to_numpy(dtype=float), counts, atol=1e-9)
+print("\nNtable matches the input counts and labels within 1e-9.  PASS")
 
 pyfsda.stop()

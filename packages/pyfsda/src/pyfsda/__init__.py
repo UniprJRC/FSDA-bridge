@@ -39,7 +39,7 @@ import sys
 from .engine import FsdaEngine, from_matlab, to_matlab
 from .frames import is_table_dict, to_dataframe
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 
 __all__ = [
     "FsdaEngine", "to_matlab", "from_matlab",
@@ -72,8 +72,11 @@ def start(routine: str | None = None, fsda_root: str | None = None,
     first routine only if you need to set ``fsda_root`` or disable ``check_version``.
     """
     global _ENGINE, _CHECK_VERSION
-    _CHECK_VERSION = check_version       # also gates the first-call GitHub version notice
     if _ENGINE is None:
+        # Set the GitHub-notice gate only when we actually create the engine, so a later
+        # bare engine() / pyfsda.<name>() call (which routes through start()) cannot silently
+        # re-enable a notice the caller disabled with start(check_version=False).
+        _CHECK_VERSION = check_version
         _ENGINE = FsdaEngine.start(routine=routine, fsda_root=fsda_root,
                                    check_version=check_version)
     return _ENGINE
