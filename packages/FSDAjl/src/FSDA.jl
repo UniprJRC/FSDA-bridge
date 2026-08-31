@@ -82,14 +82,11 @@ const FSDA_ROUTINES = [
 ]
 
 # Generate the facade functions dynamically at compile time
+
 for routine in FSDA_ROUTINES
     @eval begin
         function $routine(args...; kwargs...)
-            if _GLOBAL_ENGINE[] === nothing
-                @info "Auto-starting FSDA engine..."
-                _GLOBAL_ENGINE[] = start_engine()
-            end
-            return call(_GLOBAL_ENGINE[], $(string(routine)), args...; kwargs...)
+            return call(_engine(), $(string(routine)), args...; kwargs...)
         end
         export $routine
     end
