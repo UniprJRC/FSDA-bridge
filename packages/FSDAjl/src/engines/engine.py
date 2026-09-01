@@ -106,8 +106,12 @@ def to_matlab(x):
         return float(x)
     if isinstance(x, str):
         return x
+    if isinstance(x, dict):
+        return {k: to_matlab(v) for k, v in x.items()}
     if isinstance(x, (list, tuple)):
-        return matlab.double([float(v) for v in x])
+        if all(isinstance(v, (bool, int, float)) and not isinstance(v, bool) for v in x):
+            return matlab.double([float(v) for v in x])
+        return [to_matlab(v) for v in x]     # cell array
     return x
 
 

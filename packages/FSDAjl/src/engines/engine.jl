@@ -90,9 +90,38 @@ struct FsdaEngineHandle
 end
 
 # --- Converters --------------------------------------------------------------
-# Julia -> Python input: arrays become numpy (so engine.to_matlab marshals them);
-# scalars / strings / bools cross via PythonCall's own conversion.
-_to_py(a) = a isa AbstractArray ? _np.asarray(Py(a)) : Py(a)
+# Julia -> Python input: the inverse of _py2jl below. Numeric arrays become numpy
+# (so engine.to_matlab marshals them); Dicts become Python dicts, which the MATLAB
+# engine accepts as structs; non-numeric or mixed arrays become Python lists, which
+# it accepts as cell arrays; scalars / strings / bools cross via PythonCall.
+function _to_py(a)
+    if a === nothing
+        return _np.asarray(Py(Float64[]))          # MATLAB has no None; use []
+    elseif a isa AbstractDict
+        d = _builtins.dict()
+        for (k, v) in a
+            d[string(k)] = _to_py(v)
+        end
+        return d
+    elseif a isa AbstractArray
+        if eltype(a) <: Number
+            return _np.asarray(Py(a))
+        end
+        lst = _builtins.list()
+        for el in a
+            lst.append(_to_py(el))
+        end
+        return lst
+    elseif a isa Tuple
+        lst = _builtins.list()
+        for el in a
+            lst.append(_to_py(el))
+        end
+        return lst
+    else
+        return Py(a)
+    end
+end
 
 # Python -> Julia output: recurse through the generic shapes engine.py returns.
 function _py2jl(x)
