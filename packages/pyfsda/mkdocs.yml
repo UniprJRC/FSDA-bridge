@@ -1,0 +1,38 @@
+site_name: pyfsda
+site_description: Call FSDA (MATLAB robust-statistics toolbox) routines from Python
+repo_url: https://github.com/UniprJRC/FSDA-bridge
+theme:
+  name: material
+  palette:
+    scheme: default
+  features:
+    - navigation.sections
+    - navigation.footer
+    - content.code.copy
+
+extra:
+  generator: false
+
+copyright: Copyright &copy; 2026 pyfsda group1 developers
+
+markdown_extensions:
+  - tables
+  - fenced_code
+  - admonition
+
+nav:
+  - Home: index.md
+  - Examples:
+      - Robust regression:
+          - FSR: examples/FSR.md
+          - FSRaddt: examples/FSRaddt.md
+      - Multivariate FS:
+          - FSM: examples/FSM.md
+          - FSMeda: examples/FSMeda.md
+      - Clustering:
+          - tclust: examples/tclust.md
+          - tkmeans: examples/tkmeans.md
+      - Graphics:
+          - boxplotb: examples/boxplotb.md
+          - yXplot: examples/yXplot.md
+          - malfwdplot: examples/malfwdplot.md
