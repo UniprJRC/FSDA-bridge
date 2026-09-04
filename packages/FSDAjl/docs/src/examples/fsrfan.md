@@ -25,6 +25,12 @@ Optional, passed as name-value keywords:
 FSDA draws the fan plot with a separate function, fanplotFS, so FSRfan itself
 returns the statistics and nothing is plotted here.
 
+## Output arguments
+
+| Value | Type | Description |
+|---|---|---|
+| `Score` | `Matrix{Float64}` | `steps x (1 + number of lambdas)`: subset size, then the statistic for each candidate |
+
 ## Example
 
 ```julia
@@ -56,6 +62,15 @@ stop_engine()
 
 ## Output
 
+```
+  subset   5    -0.000    -0.000     0.000     0.000    -0.000
+  subset   9     0.195     0.268    -1.572    -1.157     0.547
+  subset  13     0.323     1.952    -0.175    -1.065    -1.828
+  subset  17     1.283     2.277     0.015    -2.384    -4.207
+  subset  21     3.135     1.620     0.822    -2.753    -8.272
+  subset  25     9.358     3.747    -0.134    -5.967   -12.110
+```
+
 A `Dict` whose `Score` field is `steps x (1 + number of lambdas)`: the subset
 size followed by the score statistic for each candidate.
 
@@ -68,14 +83,9 @@ close to zero throughout.
 The full sample row is exactly what the Score example produces on the same
 data. Score answers the question once; FSRfan shows how the answer held up.
 
-```
-  subset   5    -0.000    -0.000     0.000     0.000    -0.000
-  subset   9     0.195     0.268    -1.572    -1.157     0.547
-  subset  13     0.323     1.952    -0.175    -1.065    -1.828
-  subset  17     1.283     2.277     0.015    -2.384    -4.207
-  subset  21     3.135     1.620     0.822    -2.753    -8.272
-  subset  25     9.358     3.747    -0.134    -5.967   -12.110
-```
+The fan plot: the score statistic for each candidate lambda, monitored along the search.
+
+![](../assets/fsrfan_1.png)
 
 ## See also
 

@@ -23,6 +23,14 @@ Optional, passed as name-value keywords:
 MMreg prints an estimated running time for the S estimate. There is no msg
 option to silence it.
 
+## Output arguments
+
+| Value | Type | Description |
+|---|---|---|
+| `beta` | `Matrix{Float64}` | the final coefficients |
+| `Sbeta` | `Matrix{Float64}` | the initial S estimate they were refined from |
+| `outliers` | `Matrix{Float64}` | the units flagged |
+
 ## Example
 
 ```julia
@@ -56,6 +64,14 @@ stop_engine()
 
 ## Output
 
+```
+  S estimate  -0.111755   MM final  -0.145626
+  S estimate   0.088861   MM final   0.081873
+  S estimate  -0.101722   MM final  -0.119002
+  S estimate   0.163946   MM final   0.138894
+flagged units: [1, 2, 3, 4, 5, 40, 54, 80, 146]
+```
+
 A `Dict` with `beta`, the final coefficients, `Sbeta`, the initial S estimate
 they were refined from, and `outliers`, the units flagged.
 
@@ -67,13 +83,9 @@ On the same data LXS flags units 1 to 5 plus 40 and 146. MMreg finds all of
 those and adds 54 and 80, so the two agree on the planted outliers and differ
 only on borderline cases.
 
-```
-  S estimate  -0.111755   MM final  -0.145626
-  S estimate   0.088861   MM final   0.081873
-  S estimate  -0.101722   MM final  -0.119002
-  S estimate   0.163946   MM final   0.138894
-flagged units: [1, 2, 3, 4, 5, 40, 54, 80, 146]
-```
+The residuals from the MM estimate, with the flagged units marked.
+
+![](../assets/mmreg_1.png)
 
 ## See also
 

@@ -21,6 +21,15 @@ Optional, passed as name-value keywords:
 | `msg` | set to 0 to silence progress messages |
 | `nsamp` | how many subsamples to draw |
 
+## Output arguments
+
+| Value | Type | Description |
+|---|---|---|
+| `beta` | `Matrix{Float64}` | the estimated coefficients |
+| `residuals` | `Matrix{Float64}` | one residual per unit |
+| `outliers` | `Matrix{Float64}` | the units flagged |
+| `scale` | `Float64` | the robust spread estimate |
+
 ## Example
 
 ```julia
@@ -52,6 +61,11 @@ stop_engine()
 
 ## Output
 
+```
+flagged units: [1, 2, 3, 4, 5, 40, 146]
+after reweighting: [1, 2, 3, 4, 5, 40, 54, 146]
+```
+
 A `Dict` with `beta`, the coefficients, `residuals`, one per unit,
 `outliers`, the units flagged, and `scale`, the robust spread estimate.
 
@@ -62,10 +76,9 @@ intercept closer to zero and flags one further unit.
 One caveat: FSR uses LXS internally to choose where its search begins, so
 agreement between the two is not independent confirmation.
 
-```
-flagged units: [1, 2, 3, 4, 5, 40, 146]
-after reweighting: [1, 2, 3, 4, 5, 40, 54, 146]
-```
+The residuals from the robust fit, with the flagged units separated from the rest.
+
+![](../assets/lxs_1.png)
 
 ## See also
 

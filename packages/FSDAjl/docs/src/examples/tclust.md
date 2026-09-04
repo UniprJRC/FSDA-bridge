@@ -21,6 +21,13 @@ Optional, passed as name-value keywords:
 | `msg` | set to 0 to silence progress messages |
 | `plots` | set to 0 for no plot |
 
+## Output arguments
+
+| Value | Type | Description |
+|---|---|---|
+| `idx` | `Matrix{Float64}` | cluster label per unit, 0 meaning trimmed |
+| `muopt` | `Matrix{Float64}` | `k x v`, one centroid per row |
+
 ## Example
 
 ```julia
@@ -52,6 +59,12 @@ stop_engine()
 
 ## Output
 
+```
+  cluster 1    84 eruptions  centroid     2.01     4.51
+  cluster 2    84 eruptions  centroid     4.35     1.99
+  cluster 3    75 eruptions  centroid     4.29     4.11
+```
+
 A `Dict` in which `idx` gives the cluster label of every unit, with 0 meaning
 the unit was trimmed, and `muopt` holds one centroid per row.
 
@@ -59,11 +72,9 @@ Read each centroid as a pair. Old Faithful alternates, so there are clusters
 for short-then-long and long-then-short, but none where both this eruption and
 the previous one were short.
 
-```
-  cluster 1    84 eruptions  centroid     2.01     4.51
-  cluster 2    84 eruptions  centroid     4.35     1.99
-  cluster 3    75 eruptions  centroid     4.29     4.11
-```
+The three clusters found, each in its own colour, with the trimmed units shown as black crosses.
+
+![](../assets/tclust_2.png)
 
 ## See also
 

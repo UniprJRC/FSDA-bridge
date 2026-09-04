@@ -23,6 +23,12 @@ Optional, passed as name-value keywords:
 
 Use `D[:, 4:4]` rather than `D[:, 4]`, so the response stays two dimensional.
 
+## Output arguments
+
+| Value | Type | Description |
+|---|---|---|
+| `Tdel` | `Matrix{Float64}` | `steps x (1 + p-1)`: subset size, then one deletion t statistic per predictor |
+
 ## Example
 
 ```julia
@@ -53,6 +59,12 @@ stop_engine()
 
 ## Output
 
+```
+  X1   significant at   2 of 48 steps
+  X2   significant at  31 of 48 steps
+  X3   significant at  48 of 48 steps
+```
+
 A `Dict` whose `Tdel` field is `steps x (1 + p-1)`: the subset size followed by
 one deletion t statistic per predictor. Roughly, an absolute value above 2 is
 significant at the usual 5 percent level.
@@ -60,11 +72,9 @@ significant at the usual 5 percent level.
 Here X3 matters at every step, X1 at almost none, and X2 only once certain
 observations are in. A plain t test on the full sample would hide that.
 
-```
-  X1   significant at   2 of 48 steps
-  X2   significant at  31 of 48 steps
-  X3   significant at  48 of 48 steps
-```
+The deletion t statistic for each predictor, monitored along the search.
+
+![](../assets/fsraddt_1.png)
 
 ## See also
 

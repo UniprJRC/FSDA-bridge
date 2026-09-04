@@ -22,6 +22,13 @@ Optional, passed as name-value keywords:
 
 The response must stay two dimensional, so use `W[:, 4:4]` rather than `W[:, 4]`.
 
+## Output arguments
+
+| Value | Type | Description |
+|---|---|---|
+| `Score` | `Matrix{Float64}` | the test statistic for each candidate lambda |
+| `Lik` | `Matrix{Float64}` | the corresponding likelihood values |
+
 ## Example
 
 ```julia
@@ -46,10 +53,6 @@ stop_engine()
 
 ## Output
 
-A `Dict` with `Score`, the test statistic for each candidate lambda, and `Lik`.
-The lambda whose statistic is nearest zero is the best supported: here that is
-lambda = 0, the log transformation.
-
 ```
   lambda = -1.0    score =   17.7059
   lambda = -0.5    score =    7.4927
@@ -57,6 +60,10 @@ lambda = 0, the log transformation.
   lambda = +0.5    score =   -9.5511
   lambda = +1.0    score =  -18.5576
 ```
+
+A `Dict` with `Score`, the test statistic for each candidate lambda, and `Lik`.
+The lambda whose statistic is nearest zero is the best supported: here that is
+lambda = 0, the log transformation.
 
 ## See also
 

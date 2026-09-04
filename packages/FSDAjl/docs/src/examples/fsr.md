@@ -24,6 +24,14 @@ Optional, passed as name-value keywords:
 The response must stay two dimensional. A one dimensional Julia vector crosses
 to MATLAB as a row, and FSR expects an `n x 1` column.
 
+## Output arguments
+
+| Value | Type | Description |
+|---|---|---|
+| `ListOut` | `Matrix{Float64}` | the units flagged as outliers |
+| `beta` | `Matrix{Float64}` | the estimated coefficients |
+| `mdr` | `Matrix{Float64}` | minimum deletion residual at each step |
+
 ## Example
 
 ```julia
@@ -56,14 +64,22 @@ stop_engine()
 
 ## Output
 
-A `Dict` keyed by the FSDA field names. `ListOut` holds the units flagged as
-outliers, `beta` the estimated coefficients, and `mdr` the minimum deletion
-residual at each step of the search.
-
 ```
 units flagged as outliers: 5 of 200
 flagged units: [1, 2, 3, 4, 5]
 ```
+
+A `Dict` keyed by the FSDA field names. `ListOut` holds the units flagged as
+outliers, `beta` the estimated coefficients, and `mdr` the minimum deletion
+residual at each step of the search.
+
+The response against each predictor, with the flagged units circled in red.
+
+![](../assets/fsr_1.png)
+
+The minimum deletion residual at each step against its confidence envelopes. The search crosses the envelope at step 195, which is the signal.
+
+![](../assets/fsr_2.png)
 
 ## See also
 
