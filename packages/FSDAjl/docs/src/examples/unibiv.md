@@ -19,6 +19,12 @@ Optional, passed as name-value keywords:
 | `plots` | set to 1 to draw the confidence ellipses |
 | `textlab` | set to 1 to label the flagged units on the plot |
 
+## Output arguments
+
+| Value | Type | Description |
+|---|---|---|
+| `out` | `Matrix{Float64}` | `n x 4`: unit number, univariate exceedances, bivariate exceedances, overall score |
+
 ## Example
 
 ```julia
@@ -40,6 +46,14 @@ stop_engine()
 
 ## Output
 
+```
+  unit   167   overall score  37.9145
+  unit    40   overall score  35.5924
+  unit   171   overall score  34.0312
+  unit   161   overall score  33.8727
+  unit     5   overall score  31.6626
+```
+
 An `n x 4` matrix, one row per unit: the unit number, how often it fell
 outside a single-variable limit, how often it fell outside a two-variable
 ellipse, and a pseudo Mahalanobis distance giving its overall score.
@@ -49,13 +63,9 @@ unusual notes, five are genuine and five are forged. It looks at one or two
 variables at a time, so it finds notes with an extreme single measurement
 rather than notes that are odd in the way a forgery is.
 
-```
-  unit   167   overall score  37.9145
-  unit    40   overall score  35.5924
-  unit   171   overall score  34.0312
-  unit   161   overall score  33.8727
-  unit     5   overall score  31.6626
-```
+The confidence ellipses drawn for each pair of variables, with the units falling outside them marked.
+
+![](../assets/unibiv_1.png)
 
 ## See also
 

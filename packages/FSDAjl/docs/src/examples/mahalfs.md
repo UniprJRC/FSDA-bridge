@@ -19,6 +19,12 @@ Optional: none. `mahalFS` takes no name-value arguments.
 In the code below these are written as the Julia symbols μ and Σ. They
 are `MU` and `SIGMA` in the FSDA MATLAB documentation.
 
+## Output arguments
+
+| Value | Type | Description |
+|---|---|---|
+| `d` | `Matrix{Float64}` | `n x 1` squared distances, in the row order of `Y` |
+
 ## Example
 
 ```julia
@@ -41,13 +47,12 @@ stop_engine()
 
 ## Output
 
-`d` is an `n x 1` matrix of squared distances, in the row order of `Y`.
-Because they are squared, they compare directly against chi-square quantiles
-with `v` degrees of freedom.
-
 ```
 [4.7079, 15.3129, 9.0842]
 ```
+
+Because the distances are squared, they compare directly against chi-square
+quantiles with `v` degrees of freedom.
 
 ## See also
 

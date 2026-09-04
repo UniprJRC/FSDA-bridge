@@ -23,6 +23,13 @@ FSDA begins monitoring from its own minimum subset size, which may be larger
 than the subset you supply, so the first reported step can already be well
 into the search.
 
+## Output arguments
+
+| Value | Type | Description |
+|---|---|---|
+| `mmd` | `Matrix{Float64}` | two columns: subset size, and the minimum Mahalanobis distance at that step |
+| `MAL` | `Matrix{Float64}` | distance of every unit at every step |
+
 ## Example
 
 ```julia
@@ -49,14 +56,6 @@ stop_engine()
 
 ## Output
 
-A `Dict` whose `mmd` field has two columns, the subset size and the minimum
-Mahalanobis distance at that step, and whose `MAL` field holds the distance
-of every unit at every step.
-
-The distance is flat near 3.3 through the early steps and climbs to 5.8 by
-the end. Early on the search adds notes that sit comfortably with those
-already in; by the end the only notes left are unlike the rest.
-
 ```
   subset size 120   mmd =  3.3228
   subset size 121   mmd =  3.3230
@@ -65,6 +64,18 @@ already in; by the end the only notes left are unlike the rest.
   subset size 198   mmd =  5.5387
   subset size 199   mmd =  5.7836
 ```
+
+A `Dict` whose `mmd` field has two columns, the subset size and the minimum
+Mahalanobis distance at that step, and whose `MAL` field holds the distance
+of every unit at every step.
+
+The distance is flat near 3.3 through the early steps and climbs to 5.8 by
+the end. Early on the search adds notes that sit comfortably with those
+already in; by the end the only notes left are unlike the rest.
+
+The minimum Mahalanobis distance at each step, with its confidence envelopes.
+
+![](../assets/fsmeda_1.png)
 
 ## See also
 
