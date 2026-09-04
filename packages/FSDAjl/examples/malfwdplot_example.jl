@@ -1,64 +1,58 @@
-# malfwdplot: the forward search monitoring plot for the Swiss banknotes data.
+# malfwdplot - one trajectory per unit, monitored along the forward search.
 #
-# malfwdplot draws one trajectory per unit, showing how its scaled Mahalanobis
-# distance evolves as the forward search grows the subset. Well behaved units
-# trace flat lines near the bottom. Outliers sit high, or climb sharply once the
-# search is forced to admit them.
+#   malfwdplot(out; nargout = 0)
 #
-# This example is built differently from the others, and deliberately so.
+#   out  the Dict returned by FSMeda
 #
-# malfwdplot takes a STRUCT as its input, the output of FSMeda. Structs can be
-# returned from MATLAB to Julia, where they arrive as a Dict, but they cannot
-# currently be sent back the other way: engine.jl converts arrays to numpy and
-# passes everything else through unconverted, so a Dict never becomes a MATLAB
-# struct. Passing one back fails with "BufferError: not a buffer" before MATLAB
-# ever sees the call.
+# malfwdplot draws nothing back to Julia; it is called for the plot. Note that
+# the whole struct is passed straight through, which the bridge handles.
 #
-# The way around it is to never move the struct at all. Each step runs inside
-# the MATLAB workspace via eval_expr, so the struct is created there, consumed
-# there, and only the numeric field is brought back to Julia.
-#
-# Note: this example opens a figure window, which is the point of it.
-#
-# Run from the repository root:
-#   julia --project=code/fsda_engine packages/FSDAjl/examples/malfwdplot_example.jl
+# Full documentation: the malfwdplot page in the FSDAjl docs.
 
-include(joinpath(@__DIR__, "..", "src", "engines", "engine.jl"))
-
+using FSDA
 using Printf
 
-h = start_engine()
 
-try
-    println("building the search inside the MATLAB workspace\n")
+# Example 1 - monitoring the Swiss banknotes search.
 
-    # Step 1: load the data, MATLAB side.
-    eval_expr(h, "Y = table2array(getfield(load('swiss_banknotes.mat'),'swiss_banknotes'));",
-              nargout = 0)
+# malfwdplot draws one line per unit, showing how far that unit sits from the
+# centre at every step of the search. Ordinary units trace flat lines near the
+# bottom. A unit that is unlike the rest sits high, or climbs sharply once the
+# search is forced to admit it.
 
-    # Step 2: clean starting subset, the documented FSDA way.
-    eval_expr(h, "fre = sortrows(unibiv(Y),4); bsb = fre(1:20,1);", nargout = 0)
+# The same data and starting subset as the FSMeda example.
+Y = eval_expr("table2array(getfield(load('swiss_banknotes.mat'),'swiss_banknotes'))")
+fre = unibiv(Y)
+bsb = reshape(fre[sortperm(fre[:, 4])[1:20], 1], :, 1)
 
-    # Step 3: run the monitored search. The struct stays in MATLAB.
-    eval_expr(h, "outEDA = FSMeda(Y, bsb, 'plots', 0);", nargout = 0)
+out = FSMeda(Y, bsb; plots = 0)
 
-    # Step 4: plot it. The struct is named, not passed, so nothing crosses.
-    eval_expr(h, "malfwdplot(outEDA);", nargout = 0)
-    println("malfwdplot drawn, struct never left MATLAB\n")
+# FSMeda returns a struct, which arrives in Julia as a Dict. It can be handed
+# straight back to MATLAB.
+malfwdplot(out; nargout = 0)
+render_figures()
 
-    # Step 5: bring back only the numeric field, which crosses cleanly.
-    MAL = eval_expr(h, "outEDA.MAL")
-    @printf("MAL came back as a %s of size %s\n\n", typeof(MAL), size(MAL))
+MAL   = out["MAL"]
+final = MAL[:, end]
+ord   = sortperm(final, rev = true)
 
-    final = MAL[:, end]
-    ord = sortperm(final, rev = true)
-
-    println("ten highest trajectories at the end of the search")
-    for i in ord[1:10]
-        @printf("  unit %3d   scaled distance = %7.4f\n", i, final[i])
-    end
-
-    @printf("\nrange across all units: %.4f to %.4f\n", minimum(final), maximum(final))
-finally
-    stop_engine(h)
+println("the ten highest trajectories at the end of the search")
+for i in ord[1:10]
+    @printf("  unit %3d   scaled distance = %7.4f\n", i, final[i])
 end
+
+@printf("\nacross all units the final distances run from %.4f to %.4f\n",
+        minimum(final), maximum(final))
+
+println()
+println("The top five here are 40, 171, 167, 1 and 161, which are exactly the")
+println("five notes the mahalFS example finds most distant, in nearly the same")
+println("order. One is a single distance calculation and the other a search")
+println("monitored over eighty steps, so agreeing on the same five is worth")
+println("something.")
+println()
+println("Note that these are not the forgeries. Five of the ten highest are")
+println("genuine notes and five are forged. Distance from the centre is not the")
+println("same question as which notes were faked.")
+
+stop_engine()
