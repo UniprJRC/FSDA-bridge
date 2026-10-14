@@ -479,12 +479,14 @@ def _normalize_matlab_type(value) -> list:
         return "struct" if atom.startswith("struct:") else atom
 
     atoms = value if isinstance(value, list) else [value]
-    is_list = [isinstance(a, list) for a in atoms]
 
-    if all(is_list):
-        return [[clean(s) for s in sublist] for sublist in atoms]
+    if all(isinstance(a, list) for a in atoms):
+        clauses = [[clean(s) for s in sublist] for sublist in atoms]
+    else:
+        clauses = [[clean(atom) for atom in atoms]]
 
-    return [[clean(atom) for atom in atoms]]
+    # Remove duplicates `struct` while keeping order
+    return [list(c) for c in dict.fromkeys(map(tuple, clauses))]
 
 
 def _union_types(first: list, second: list) -> list:
