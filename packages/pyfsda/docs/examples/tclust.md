@@ -45,7 +45,7 @@ Y = pyfsda.load( "geyser2.txt")
 
 # Run tclust: 3 clusters, 10% trimming, restriction factor of 10000
 pyfsda.rng(1234, nargout=0)
-out = pyfsda.tclust(Y, k=3, alpha=0.10, restrfactor=10000)
+out = pyfsda.tclust(Y, 3, 0.10, 10000)
 
 pyfsda.stop()
 ```
