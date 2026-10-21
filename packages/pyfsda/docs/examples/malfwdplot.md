@@ -8,7 +8,7 @@ Mandatory:
 
 | Argument | Type | Description |
 |---|---|---|
-| `out` | `dict` | structure containing the monitoring of the Mahalanobis distance (fields below) |
+| `out` | `dict` | dict containing the monitoring of the Mahalanobis distance (fields below) |
 
 Fields of `out`:
 
@@ -24,13 +24,15 @@ full list on RoSA, linked below, for the rest):
 
 | Argument | Default | Description |
 |---|---|---|
-| `standard` | `SizeAxesNum=10`, `SizeAxesLab=12`, `xlim` and `ylim` automatic, `titl=''`, `labx='Subset size m'`, `laby='Mahalanobis distances'`, `LineWidth=1`, `Color={'b'}`, `LineStyle={'-'}` | `dict` with the appearance of the plot: limits and labels of the axes, font sizes, colour, line width and line style of the trajectories |
-| `fground` | `fthresh=2.5`, `flabstep=[m0 n]`, `LineWidth=1`, `LineStyle={'-'}`, `FontSize=12` | `dict` which controls which trajectories are highlighted and how they are plotted. `fthresh`: highlight the units whose MD was at least once greater (in absolute value) than `fthresh`; alternatively `funit` is the list of units to highlight (`fthresh` is then ignored). `flabstep`: steps where labels are put. Other fields: `LineWidth`, `Color`, `LineStyle`, `fmark`, `FontSize`. `fground=''` highlights no unit and puts no label |
-| `bground` | `bthresh=2.5` if `n>100`, `-inf` if `n<=100` (all trajectories are treated as important); `bstyle='faint'` when `n>100` | `dict` which specifies the "unimportant" trajectories in background. `bthresh`: units whose MD was always smaller (in absolute value) than `bthresh`. `bstyle`: how to plot them, `'faint'` (colormap), `'hide'` or `'greysh'` (faint grey) |
+| `standard` | `SizeAxesNum=10`, `SizeAxesLab=12`, `xlim` and `ylim` automatic, `titl=''`, `labx='Subset size m'`, `laby='Mahalanobis distances'`, `LineWidth=1`, `Color=['b']`, `LineStyle=['-']` | `dict` with the appearance of the plot: limits and labels of the axes, font sizes, colour, line width and line style of the trajectories |
+| `fground` | `fthresh=2.5`, `flabstep=[m0 ,n]`, `LineWidth=1`, `LineStyle=['-']`, `FontSize=12` | `dict` which controls which trajectories are highlighted and how they are plotted |
+| `bground` | `bthresh=2.5` if `n>100`, `-inf` if `n<=100` (all trajectories are treated as important); `bstyle='faint'` when `n>100` | `dict` which specifies the "unimportant" trajectories in background|
 | `tag` | `'pl_mal'` | tag which identifies the plot; if a plot with the same tag exists, the new plot overwrites it, otherwise a new window is created |
-| `label` | `row1, ..., rown` | cell of strings with the labels of the `n` units, used in the datatooltip and in brushing, and to label the units in the plot |
-| `nameY` | `Y1, ..., Yv` | cell of strings with the labels of the `v` variables, added to the scatter plot matrix after brushing |
-| `msg` | not stated on the FSDA page | `1` saves in `plotopt` the options used to draw the three types of trajectories (`standard`, `fground`, `bground`); `2` also prints them on the screen |
+| `datatooltip` | `''` (empty value) | interactive clicking to select an individual MD trajectory in order to have information about the corresponding unit, associated label, and step of entry. Can be a scalar or a `dict` with fields `DisplayStyle`, `SnapToDataVertex`, `LineColor`, `SubsetLinesColor` |
+| `databrush` | `''` (empty value) | interactive mouse brushing. Enables the user to select a set of trajectories in the current plot and see them highlighted in the scatter plot matrix (spm). Can be a scalar or a `dict` with fields `persist`, `Label`, `labeladd` |
+| `label` | `row1, ..., rown` | list of strings with the labels of the `n` units, used in the datatooltip and in brushing, and to label the units in the plot |
+| `nameY` | `Y1, ..., Yv` | list of strings with the labels of the `v` variables, added to the scatter plot matrix after brushing |
+| `msg` |  | `1` saves in `plotopt` the options used to draw the three types of trajectories (`standard`, `fground`, `bground`); `2` also prints them on the screen |
 | `conflev` | empty (no confidence line) | confidence levels of the horizontal bands, based on the chi^2 distribution, e.g. `[0.95, 0.99, 0.999]`. The lines are red with line width 2. A `dict` with fields `color`, `linewidth` and `conflev` controls colour and width |
 
 ## Example
@@ -71,7 +73,7 @@ pyfsda.stop()
 
 | Output | Description |
 |---|---|
-| `plotopt` | cell array of strings with the options which have been used to create the plot |
+| `plotopt` | list of strings with the options which have been used to create the plot |
 
 ## See also
 

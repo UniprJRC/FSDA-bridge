@@ -16,16 +16,27 @@ full list on RoSA, linked below, for the rest):
 
 | Argument | Default | Description |
 |---|---|---|
-| `DataVars` | not stated on the FSDA page | variables for which the t deletion tests have to be computed (vector of positive integers, or empty) |
-| `h` | not stated on the FSDA page | number of observations that have determined the least trimmed squares estimator |
-| `intercept` | `True` | indicator for the constant term |
-| `init` | not stated on the FSDA page | search initialization, e.g. `init=100` starts monitoring from step `m=100` |
-| `lms` | not stated on the FSDA page | criterion used to find the initial subset that initializes the search |
-| `nsamp` | not stated on the FSDA page | number of subsamples extracted to find the robust estimator |
-| `plots` | not stated on the FSDA page | plot on the screen |
-| `nameX` | not stated on the FSDA page | variable labels in the plot (list of strings) |
-| `msg` | not stated on the FSDA page | level of output to display (boolean) |
-| `quant` | not stated on the FSDA page | confidence quantiles for the envelopes, e.g. `[0.025, 0.975]` |
+| `DataVars` | [] | columns of `X` for which the t deletion tests are computed (vector of positive integers) |
+| `h` || number of observations that have determined the least trimmed squares estimator; an integer greater or equal than `[(n+size(X,2)+1)/2]` and smaller than `n` |
+| `ilr` | `False` | set to `True` if `X` contains compositional data: for each column of `X` the function `pivotCoord` is invoked and the added variable whose test is monitored is the first coordinate of the ilr transformation |
+| `intercept` | `True` | `True` includes the constant term in the fit, `False` removes it from the model |
+| `init` | `p+1` if `n<40`, else `min(3p+1, floor(0.5(n+p+1)))` | initial subset size at which monitoring starts|
+| `lms` | `1` | `1` computes Least Median of Squares to find the initial subset, any other value computes Least Trimmed Squares |
+| `nsamp` | all subsets if fewer than 1000 are possible, else 1000 | number of subsamples extracted to find the robust estimator; `0` extracts all  |
+| `plots` | 0 | `1` draws a plot with the forward deletion t statistics |
+| `nameX` | `X1, ..., Xp`  | labels of the variables of the regression dataset, used in the plot |
+| `lwdenv` | `2` | line width for the envelopes based on the Student T |
+| `msg` | `True` | `True` displays messages about the subset size every 100 steps, otherwise no message is displayed |
+| `quant` | `[0.005, 0.995]` | confidence quantiles for the envelopes of the deletion t statistic (a 99 per cent pointwise confidence interval) |
+| `lwdt` | `2` | line width for the deletion t statistic |
+| `nocheck` | `False` | `True` performs no check on `y` and `X`, which are left unchanged: the column of ones for the intercept is not added |
+| `titl` | `''` | label for the title |
+| `labx` | `'Subset size m'` | label for the x-axis |
+| `laby` | `'Deletion t statistics'` | label for the y-axis |
+| `FontSize` | `12` | font size of the labels of the axes and of the labels inside the plot |
+| `SizeAxesNum` | `10` | size of the numbers of the axes |
+| `ylimy` | `''` (automatic scale) | minimum and maximum of the y axis |
+| `xlimx` | `''` (automatic scale) | minimum and maximum of the x axis |
 
 ## Example
 
