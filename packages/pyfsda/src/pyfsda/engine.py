@@ -288,6 +288,17 @@ class FsdaEngine:
             if not _IDENT_RE.match(str(key)):
                 raise ValueError(f"unsafe / malformed option name: {key!r}")
 
+        if store is not None:
+            if nargout == 0:
+                raise ValueError("store= needs nargout >= 1: there is no output to store")
+            if frames:
+                raise ValueError("frames= has no effect with store=: nothing is returned to "
+                                 "convert; pass frames=True to fetch() instead")
+            if not _IDENT_RE.match(store):
+                raise ValueError(f"unsafe / malformed store name: {store!r}")
+            if store.startswith("fe_"):
+                raise ValueError(f"store name {store!r} uses the bridge's reserved 'fe_' prefix")
+
         in_names, opt_tokens, temp = [], [], []
         for i, a in enumerate(args):
             if isinstance(a, WorkspaceRef):
@@ -307,8 +318,6 @@ class FsdaEngine:
                 temp.append(vn)
 
         if store is not None:
-            if not _IDENT_RE.match(store):
-                raise ValueError(f"unsafe / malformed store name: {store!r}")
             out_names = [store if j == 0 else f"{store}_{j}" for j in range(nargout)]
             # refs should not be added to temp, to prevent automatic cleanup
         else:
