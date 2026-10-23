@@ -4,6 +4,23 @@ All notable changes to `pyfsda` are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.6.0] — 2026-10-23
+
+### Added
+- **Workspace persistence for chained calls.** `call(..., store="name")` keeps the
+  output(s) in the MATLAB workspace and returns a `WorkspaceRef` (`name`, `name_1`, …
+  for `nargout > 1`) instead of marshalling them back. Refs can be passed as inputs or
+  option values to later calls, read with `fetch()` (with an optional `frames=`), and
+  removed with `clear()`; `ref.field("x")` addresses a struct field. Chained pipelines
+  skip the Python ↔ MATLAB round trip for intermediate results.
+
+### Notes
+- `store=` rejects names starting with `fe_` (reserved for the bridge's temporaries),
+  and cannot be combined with `nargout=0` or `frames=True`.
+- Avoid MATLAB/FSDA function names as store names (e.g. `store="mean"`): a workspace
+  variable shadows the function of the same name for later calls. The naming rules
+  for `store=` may be tightened in a later release.
+
 ## [0.5.0] — 2026-08-03
 
 ### Added
