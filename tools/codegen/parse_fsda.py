@@ -479,12 +479,14 @@ def _normalize_matlab_type(value) -> list:
         return "struct" if atom.startswith("struct:") else atom
 
     atoms = value if isinstance(value, list) else [value]
-    is_list = [isinstance(a, list) for a in atoms]
 
-    if all(is_list):
-        return [[clean(s) for s in sublist] for sublist in atoms]
+    if all(isinstance(a, list) for a in atoms):
+        clauses = [[clean(s) for s in sublist] for sublist in atoms]
+    else:
+        clauses = [[clean(atom) for atom in atoms]]
 
-    return [[clean(atom) for atom in atoms]]
+    # Remove duplicates `struct` while keeping order
+    return [list(c) for c in dict.fromkeys(map(tuple, clauses))]
 
 
 def _union_types(first: list, second: list) -> list:
@@ -528,17 +530,43 @@ def _merge_inputs(entries: list) -> list:
     return [by_name[name] for name in order]
 
 
+def _is_valid_type_spec(value) -> bool:
+    """True if `value` is a string, a list of strings, or a list of lists of strings."""
+    if isinstance(value, str):
+        return True
+    if not isinstance(value, list):
+        return False
+    if all(isinstance(atom, str) for atom in value):
+        return True
+    return all(
+        isinstance(clause, list) and all(isinstance(atom, str) for atom in clause)
+        for clause in value
+    )
+
+
 def _validate_input_types(name: str, entries: list) -> bool:
-    """Reject a function if any individual signature has an untyped input."""
+    """Reject a function if any individual signature has an untyped input.
+    or an input whose type is not one of MATLAB's three documented forms."""
     valid = True
     for signature_index, entry in enumerate(entries, start=1):
         for param in entry.get("inputs") or []:
-            if "type" not in param or param.get("type") is None:
-                input_name = param.get("name", "<unnamed>")
+            input_name = param.get("name", "<unnamed>")
+            type_spec = param.get("type")
+            if type_spec is None:
                 log.warning(
                     "%s: input %s has no type in signature %d; skipping function",
                     name,
                     input_name,
+                    signature_index,
+                )
+                valid = False
+            elif not type_spec or not _is_valid_type_spec(type_spec):
+                log.warning(
+                    "%s: input %s has an unsupported type %r in signature %d; "
+                    "skipping function",
+                    name,
+                    input_name,
+                    type_spec,
                     signature_index,
                 )
                 valid = False
