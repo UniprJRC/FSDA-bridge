@@ -21,7 +21,8 @@ const _builtins = PythonCall.pynew()
 const _ENGINE_PY = PythonCall.pynew()
 const _PY_READY = Ref(false)
 
-# Controls state of py modules import, and lazy loads on  on the first use
+# Controls state of py modules import, and lazy loads on the first use
+# Fills the handles the converters use. Only needs numpy.
 function _ensure_python!()
     _PY_READY[] && return nothing
     np = pyimport("numpy")
@@ -33,6 +34,7 @@ function _ensure_python!()
 end
 
 # Load vendored engine.py with a unique module name
+# Needs matlabengine
 function _engine_py()
     if PythonCall.pyisnull(_ENGINE_PY)
         util = pyimport("importlib.util")
@@ -138,11 +140,26 @@ This session is separate from the one the routine functions start automatically:
 On start, a notice is printed if a newer FSDA release is available.
 """
 function start_engine(; routine = nothing, fsda_root = nothing)
-    _ensure_python!()
+    engine_mod = try
+        _ensure_python!()
+        _engine_py()
+    catch err
+        if err isa PyException
+            exe = pyconvert(String, pyimport("sys").executable)
+            error("""
+            Cannot load the python modules required by the bridge with the following
+            interpreter: $exe
+
+            FSDABridge needs numpy and a matlabengine matching your MATLAB version.
+            See 'Configure PythonCall' in the readme for more information.""")
+        else
+            rethrow()
+        end
+    end
 
     rt = routine === nothing ? nothing : String(routine)
     fr = (fsda_root === nothing || isempty(String(fsda_root))) ? nothing : String(fsda_root)
-    engine = _engine_py().FsdaEngine.start(rt, fr)
+    engine = engine_mod.FsdaEngine.start(rt, fr)
     return FsdaEngineHandle(engine)
 end
 
