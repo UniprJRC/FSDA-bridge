@@ -8,23 +8,6 @@
 # piece: a recursive `_py2jl` converter for arbitrary nested dict / array / list / str /
 # table results.
 
-# --- Locate this file's directory (engine.py must sit next to it) ------------
-const _ENGINE_DIR = let
-    here = @__DIR__
-    if isfile(joinpath(here, "engine.py"))
-        abspath(here)
-    else
-        wd = pwd()
-        candidates = [wd, joinpath(wd, "code", "fsda_engine")]
-        idx = findfirst(c -> isfile(joinpath(c, "engine.py")), candidates)
-        idx === nothing && error(
-            "Cannot locate code/fsda_engine/engine.py next to engine.jl or under the " *
-            "working directory; run from the repo or the engine directory.")
-        abspath(candidates[idx])
-    end
-end
-
-
 using PythonCall
 
 const _PYTHONCALL_VERSION = try
@@ -35,6 +18,7 @@ end
 
 const _np = PythonCall.pynew()
 const _builtins = PythonCall.pynew()
+const _ENGINE_PY = PythonCall.pynew()
 const _PY_READY = Ref(false)
 
 # Controls state of py modules import, and lazy loads on  on the first use
@@ -48,11 +32,23 @@ function _ensure_python!()
     return nothing
 end
 
+# Load vendored engine.py with a unique module name
+function _engine_py()
+    if PythonCall.pyisnull(_ENGINE_PY)
+        util = pyimport("importlib.util")
+        name = "fsdabridge_engine"
+        spec = util.spec_from_file_location(name, joinpath(_ENGINE_DIR, "engine.py"))
+        mod = util.module_from_spec(spec)
+        pyimport("sys").modules[name] = mod
+        spec.loader.exec_module(mod)
+        PythonCall.pycopy!(_ENGINE_PY, mod)
+    end
+    return _ENGINE_PY
+end
+
 # --- Opaque handle -----------------------------------------------------------
 struct FsdaEngineHandle
-    module_::Py     # imported Python `engine` module
     engine::Py      # live FsdaEngine instance (wraps a matlab.engine session)
-    engine_dir::String
 end
 
 # --- Converters --------------------------------------------------------------
@@ -144,18 +140,10 @@ On start, a notice is printed if a newer FSDA release is available.
 function start_engine(; routine = nothing, fsda_root = nothing)
     _ensure_python!()
 
-    sys = pyimport("sys")
-    while pyconvert(Bool, sys.path.__contains__(_ENGINE_DIR))
-        sys.path.remove(_ENGINE_DIR)
-    end
-    sys.path.insert(0, _ENGINE_DIR)
-    sys.modules.pop("engine", nothing)     # fresh import of this dir's engine.py
-    module_ = pyimport("engine")
-
     rt = routine === nothing ? nothing : String(routine)
     fr = (fsda_root === nothing || isempty(String(fsda_root))) ? nothing : String(fsda_root)
-    engine = module_.FsdaEngine.start(rt, fr)
-    return FsdaEngineHandle(module_, engine, _ENGINE_DIR)
+    engine = _engine_py().FsdaEngine.start(rt, fr)
+    return FsdaEngineHandle(engine)
 end
 
 # Arguments and return values are documented on call(name, ...) in FSDABridge.jl;
@@ -221,6 +209,6 @@ function diagnostics(handle)
         python_version = pyconvert(String, pyimport("platform").python_version()),
         matlab = pyconvert(String, handle.engine.version()),
         matlabengine = engine_pkg,
-        engine_dir = handle.engine_dir,
+        engine_dir = _ENGINE_DIR,
     )
 end
