@@ -5,10 +5,10 @@ makedocs(
     sitename = "FSDABridge.jl",
     authors  = "UniprJRC",
     modules  = [FSDABridge],
-    warnonly = true,
     format   = Documenter.HTML(prettyurls = false),
     pages = [
         "Home" => "index.md",
+        "API reference" => "api.md",
         "Examples" => [
             "mahalFS"  => "examples/mahalfs.md",
             "unibiv"   => "examples/unibiv.md",
