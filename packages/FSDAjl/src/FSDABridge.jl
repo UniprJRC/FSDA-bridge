@@ -116,7 +116,6 @@ const FSDA_ROUTINES = [
     :FSR,
     :FSRaddt,
     :tclust,
-    :getYahoo,
     :unibiv,
     :LXS,
     :MMreg,
