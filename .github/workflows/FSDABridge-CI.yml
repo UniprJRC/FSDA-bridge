@@ -37,7 +37,7 @@ jobs:
           project: packages/FSDAjl
 
   load-check:
-    name: Load check, as AutoMerge does it
+    name: Load check with AutoMerge setup
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -51,3 +51,24 @@ jobs:
           env -i HOME="$HOME" PATH="$PATH" JULIA_REGISTRYCI_AUTOMERGE=true PYTHON= \
             JULIA_PKG_PRECOMPILE_AUTO=0 JULIA_DEPOT_PATH="$(mktemp -d):" \
             julia -e 'using Pkg; Pkg.develop(path="packages/FSDAjl"); import FSDABridge'
+
+  load-check-no-python:
+    name: Load check without Python
+    runs-on: ubuntu-latest
+    container: julia:1.13
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - name: Load without Python
+        shell: bash
+        env:
+          JULIA_REGISTRYCI_AUTOMERGE: "true"
+          PYTHON: ""
+          JULIA_PKG_PRECOMPILE_AUTO: "0"
+        run: |
+          if command -v python3 || command -v python; then
+            echo "This check needs a machine without Python"; exit 1
+          fi
+          julia -e 'using Pkg; Pkg.develop(path="packages/FSDAjl"); import FSDABridge'
