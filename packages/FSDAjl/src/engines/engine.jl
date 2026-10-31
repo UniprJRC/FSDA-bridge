@@ -1,12 +1,6 @@
-# Generic Layer-2 Julia surface for the shared FSDA engine (spec 017).
-#
-# The actual MATLAB/FSDA call stays in the Python engine (code/fsda_engine/engine.py,
-# class FsdaEngine); this file owns PythonCall setup and delegates a *routine-agnostic*
-# `call(handle, name, args...; kwargs...)` straight to the Python `FsdaEngine.call`.
-# Unlike the per-target bridge.jl files (one wrapper per routine), this works for ANY
-# FSDA function. PythonCall does NOT auto-convert, so it adds the one genuinely new
-# piece: a recursive `_py2jl` converter for arbitrary nested dict / array / list / str /
-# table results.
+# Julia interface that handles Python <-> Julia exchange of information through
+# PythonCall. Starts the engine, passes calls to it, handles the conversion to
+# Python (_to_py) and marshals the results back to Julia (_py2jl). 
 
 using PythonCall
 
