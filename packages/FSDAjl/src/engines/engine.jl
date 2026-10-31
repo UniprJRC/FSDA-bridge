@@ -147,10 +147,12 @@ function start_engine(; routine = nothing, fsda_root = nothing)
         if err isa PyException
             exe = pyconvert(String, pyimport("sys").executable)
             error("""
-            Cannot load the python modules required by the bridge with the following
-            interpreter: $exe
+            Cannot load the Python components required by FSDABridge using:
+                $exe
 
-            FSDABridge needs numpy and a matlabengine matching your MATLAB version.
+            Verify that PythonCall is configured to use the correct interpreter
+            and that NumPy and a matlabengine compatible with your MATLAB version
+            are installed for it.
             See 'Configure PythonCall' in the readme for more information.""")
         else
             rethrow()
