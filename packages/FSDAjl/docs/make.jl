@@ -26,3 +26,11 @@ makedocs(
         ],
     ],
 )
+
+deploydocs(
+    repo = "github.com/UniprJRC/FSDA-bridge.git",
+    dirname = "julia",
+    devbranch = "main",
+    tag_prefix = "FSDABridge-",
+    push_preview = false,
+)
