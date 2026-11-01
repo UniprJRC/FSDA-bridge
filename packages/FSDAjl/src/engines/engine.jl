@@ -1,62 +1,6 @@
-# Generic Layer-2 Julia surface for the shared FSDA engine (spec 017).
-#
-# The actual MATLAB/FSDA call stays in the Python engine (code/fsda_engine/engine.py,
-# class FsdaEngine); this file owns PythonCall setup and delegates a *routine-agnostic*
-# `call(handle, name, args...; kwargs...)` straight to the Python `FsdaEngine.call`.
-# Unlike the per-target bridge.jl files (one wrapper per routine), this works for ANY
-# FSDA function. PythonCall does NOT auto-convert, so it adds the one genuinely new
-# piece: a recursive `_py2jl` converter for arbitrary nested dict / array / list / str /
-# table results.
-#
-# CRITICAL: PythonCall binds its interpreter at load time (`using PythonCall`), so the
-# interpreter is resolved and exported via ENV *before* that line.
-
-# --- Locate this file's directory (engine.py must sit next to it) ------------
-const _ENGINE_DIR = let
-    here = @__DIR__
-    if isfile(joinpath(here, "engine.py"))
-        abspath(here)
-    else
-        wd = pwd()
-        candidates = [wd, joinpath(wd, "code", "fsda_engine")]
-        idx = findfirst(c -> isfile(joinpath(c, "engine.py")), candidates)
-        idx === nothing && error(
-            "Cannot locate code/fsda_engine/engine.py next to engine.jl or under the " *
-            "working directory; run from the repo or the engine directory.")
-        abspath(candidates[idx])
-    end
-end
-
-# --- Interpreter resolution (no machine-specific path committed) -------------
-function _resolve_python(python::AbstractString)
-    p = String(python)
-    if isempty(p)
-        found = Sys.which("python")
-        found === nothing && (found = Sys.which("python3"))
-        found === nothing && error(
-            "No Python interpreter found. Set FSDA_DEV_VENV to your venv's python " *
-            "executable (bin/python on macOS) that has matlabengine installed.")
-        return abspath(found)
-    end
-    isfile(p) && return abspath(p)
-    if isdir(p)
-        nested = [
-            joinpath(p, "python.exe"),
-            joinpath(p, "Scripts", "python.exe"),
-            joinpath(p, "bin", "python"),
-            joinpath(p, "bin", "python3"),
-        ]
-        idx = findfirst(isfile, nested)
-        idx !== nothing && return abspath(nested[idx])
-    end
-    error("Python venv or executable not found: ", p,
-          ". Set FSDA_DEV_VENV to the project venv or a Python executable with matlabengine.")
-end
-
-# Resolve the interpreter and pin PythonCall to it BEFORE `using PythonCall`.
-const _PYTHON_EXE = _resolve_python(get(ENV, "FSDA_DEV_VENV", ""))
-ENV["JULIA_CONDAPKG_BACKEND"] = "Null"
-ENV["JULIA_PYTHONCALL_EXE"] = _PYTHON_EXE
+# Julia interface that handles Python <-> Julia exchange of information through
+# PythonCall. Starts the engine, passes calls to it, handles the conversion to
+# Python (_to_py) and marshals the results back to Julia (_py2jl). 
 
 using PythonCall
 
@@ -68,9 +12,11 @@ end
 
 const _np = PythonCall.pynew()
 const _builtins = PythonCall.pynew()
+const _ENGINE_PY = PythonCall.pynew()
 const _PY_READY = Ref(false)
 
-# Controls state of py modules import, and lazy loads on  on the first use
+# Controls state of py modules import, and lazy loads on the first use
+# Fills the handles the converters use. Only needs numpy.
 function _ensure_python!()
     _PY_READY[] && return nothing
     np = pyimport("numpy")
@@ -81,12 +27,24 @@ function _ensure_python!()
     return nothing
 end
 
+# Load vendored engine.py with a unique module name
+# Needs matlabengine
+function _engine_py()
+    if PythonCall.pyisnull(_ENGINE_PY)
+        util = pyimport("importlib.util")
+        name = "fsdabridge_engine"
+        spec = util.spec_from_file_location(name, joinpath(_ENGINE_DIR, "engine.py"))
+        mod = util.module_from_spec(spec)
+        pyimport("sys").modules[name] = mod
+        spec.loader.exec_module(mod)
+        PythonCall.pycopy!(_ENGINE_PY, mod)
+    end
+    return _ENGINE_PY
+end
+
 # --- Opaque handle -----------------------------------------------------------
 struct FsdaEngineHandle
-    module_::Py     # imported Python `engine` module
     engine::Py      # live FsdaEngine instance (wraps a matlab.engine session)
-    python::String
-    engine_dir::String
 end
 
 # --- Converters --------------------------------------------------------------
@@ -175,28 +133,30 @@ This session is separate from the one the routine functions start automatically:
 
 On start, a notice is printed if a newer FSDA release is available.
 """
-function start_engine(; routine = nothing,
-                       python::AbstractString = get(ENV, "FSDA_DEV_VENV", ""),
-                       fsda_root = nothing)
-    _ensure_python!()
-    requested = isempty(String(python)) ? _PYTHON_EXE : _resolve_python(python)
-    if requested != _PYTHON_EXE
-        @warn("PythonCall is already bound to a different interpreter; start a fresh " *
-              "`julia` process to switch interpreters.", bound = _PYTHON_EXE, requested = requested)
-    end
+function start_engine(; routine = nothing, fsda_root = nothing)
+    engine_mod = try
+        _ensure_python!()
+        _engine_py()
+    catch err
+        if err isa PyException
+            exe = pyconvert(String, pyimport("sys").executable)
+            error("""
+            Cannot load the Python components required by FSDABridge using:
+                $exe
 
-    sys = pyimport("sys")
-    while pyconvert(Bool, sys.path.__contains__(_ENGINE_DIR))
-        sys.path.remove(_ENGINE_DIR)
+            Verify that PythonCall is configured to use the correct interpreter
+            and that NumPy and a matlabengine compatible with your MATLAB version
+            are installed for it.
+            See 'Configure PythonCall' in the readme for more information.""")
+        else
+            rethrow()
+        end
     end
-    sys.path.insert(0, _ENGINE_DIR)
-    sys.modules.pop("engine", nothing)     # fresh import of this dir's engine.py
-    module_ = pyimport("engine")
 
     rt = routine === nothing ? nothing : String(routine)
     fr = (fsda_root === nothing || isempty(String(fsda_root))) ? nothing : String(fsda_root)
-    engine = module_.FsdaEngine.start(rt, fr)
-    return FsdaEngineHandle(module_, engine, _PYTHON_EXE, _ENGINE_DIR)
+    engine = engine_mod.FsdaEngine.start(rt, fr)
+    return FsdaEngineHandle(engine)
 end
 
 # Arguments and return values are documented on call(name, ...) in FSDABridge.jl;
@@ -262,7 +222,6 @@ function diagnostics(handle)
         python_version = pyconvert(String, pyimport("platform").python_version()),
         matlab = pyconvert(String, handle.engine.version()),
         matlabengine = engine_pkg,
-        engine_dir = handle.engine_dir,
-        requested_python = handle.python,
+        engine_dir = _ENGINE_DIR,
     )
 end

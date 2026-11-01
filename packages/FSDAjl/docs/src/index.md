@@ -10,19 +10,13 @@ Before installing, make sure you have:
 
 - MATLAB installed and licensed, with the FSDA Add-On installed and available on the MATLAB path.
 - A Python environment with `numpy` and a `matlabengine` release matching your MATLAB version (for example, `matlabengine==26.1.*` for MATLAB R2026a).
-- Julia with the package dependencies available.
+- Julia 1.10 or later.
 
 **FSDABridge.jl can be installed without MATLAB**, but calls into FSDA will fail until MATLAB, FSDA, and the matching MATLAB Engine API for Python are configured.
 
-MATLAB and the MATLAB Engine API for Python are proprietary MathWorks software and are not distributed with this package; see [THIRD_PARTY_NOTICE.md](https://github.com/UniprJRC/FSDA-bridge/blob/main/packages/FSDAjl/THIRD_PARTY_NOTICE.md).
-
-## Install matrix
-
-| MATLAB release | Required `matlabengine` |
-| -------------- | ----------------------- |
-| R2026a         | `matlabengine==26.1.*`  |
-
 Match `matlabengine` to your installed MATLAB release; do not assume the example version applies to every MATLAB release.
+
+MATLAB and the MATLAB Engine API for Python are proprietary MathWorks software and are not distributed with this package; see [THIRD_PARTY_NOTICE.md](https://github.com/UniprJRC/FSDA-bridge/blob/main/packages/FSDAjl/THIRD_PARTY_NOTICE.md).
 
 ## Installation
 
@@ -33,15 +27,56 @@ Pkg.add("FSDABridge")
 
 ## Configure PythonCall
 
-FSDABridge.jl uses [PythonCall.jl](https://github.com/JuliaPy/PythonCall.jl) to call the existing Python environment. Configure PythonCall to use the virtual environment above instead of provisioning its own Python through Conda: Conda cannot install MATLAB's `matlabengine` package.
+FSDABridge.jl uses [PythonCall.jl](https://github.com/JuliaPy/PythonCall.jl) to call the existing Python environment. PythonCall normally uses CondaPkg to supply dependencies,
+matlabengine, however has to be built against your MATLAB, and Conda can't do that. This
+means that you have to setup your own Python environment and point PythonCall at it.
 
-```bash
-export JULIA_CONDAPKG_BACKEND=Null
-export FSDA_DEV_VENV=/path/to/your/venv/bin/python
-export JULIA_PYTHONCALL_EXE=/path/to/your/venv/bin/python
+### 1. Create a Python environment
+Install numpy and the matlabengine matching your MATLAB version. See 
+[Install MATLAB Engine API for Python](https://www.mathworks.com/help/matlab/matlab_external/install-the-matlab-engine-for-python.html) for a guide on installing matlabengine. Your Python version must also be compatible with your MATLAB and matlabengine's version, you can check compatibility at: [Versions of Python Compatible with MATLAB Products](https://www.mathworks.com/support/requirements/python-compatibility.html).
+
+### 2. Point PythonCall at it
+Tell CondaPkg not to install anything, and tell PythonCall which Python it should use.
+This can be achieved in 2 main ways.
+
+Adding them as preferences:
+```julia
+# Go to the default environment, install PreferenceTools there, then go back:
+pkg> activate
+pkg> add PreferenceTools
+pkg> activate /path/to/your/project/
+
+# In the project where you use FSDABridge:
+# preferences only apply for packages in your project, so add these explicitly
+pkg> add PythonCall CondaPkg
+julia> using PreferenceTools
+pkg> preference add CondaPkg backend=Null
+pkg> preference add PythonCall exe=/path/to/your/venv/bin/python
 ```
 
-Set these **before** starting Julia / loading the package. FSDABridge.jl checks `JULIA_CONDAPKG_BACKEND` at load time and will warn loudly if it isn't set to `"Null"`.
+or by setting them as environment variables before starting Julia:
+```bash
+export JULIA_CONDAPKG_BACKEND=Null
+export JULIA_PYTHONCALL_EXE=/Path/to/your/venv/bin/python
+```
+
+### 3. Restart Julia, check, and try a first call
+After restarting Julia, you can run our diagnostics function to make sure everything
+is working as it should:
+
+```julia
+using FSDABridge
+
+h = start_engine()
+diagnostics(h)
+stop_engine(h)
+```
+
+If something is misconfigured, `start_engine()` will error at runtime, the error will
+show which Python PythonCall is using: if its path contains `.CondaPkg`, then step 2
+hasn't taken effect.
+
+Otherwise, if everything works correctly, you can proceed to try a first call.
 
 ## A first call
 

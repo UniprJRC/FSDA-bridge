@@ -5,10 +5,10 @@ makedocs(
     sitename = "FSDABridge.jl",
     authors  = "UniprJRC",
     modules  = [FSDABridge],
-    warnonly = true,
     format   = Documenter.HTML(prettyurls = false),
     pages = [
         "Home" => "index.md",
+        "API reference" => "api.md",
         "Examples" => [
             "mahalFS"  => "examples/mahalfs.md",
             "unibiv"   => "examples/unibiv.md",
@@ -25,4 +25,12 @@ makedocs(
             "tkmeans"  => "examples/tkmeans.md",
         ],
     ],
+)
+
+deploydocs(
+    repo = "github.com/UniprJRC/FSDA-bridge.git",
+    dirname = "julia",
+    devbranch = "main",
+    tag_prefix = "FSDABridge-",
+    push_preview = false,
 )
