@@ -1,4 +1,5 @@
 # FSDABridge.jl
+[![Docs](https://img.shields.io/badge/docs-blue.svg)](https://uniprjrc.github.io/FSDA-bridge/julia/)
 
 FSDABridge.jl lets you call the MATLAB [FSDA toolbox](https://github.com/UniprJRC/FSDA) from Julia through a thin wrapper over [FSDA-bridge](https://github.com/UniprJRC/FSDA-bridge)'s generic Python engine.
 
@@ -129,9 +130,9 @@ call("rng", 1234, nargout = 0)
 
 ## Examples
 
-Runnable scripts for each routine are in [`examples/`](examples/). The pages in
-[`docs/src/examples/`](docs/src/examples/) give each routine's input arguments, a worked
-example with its output, and a link to the corresponding page of the FSDA documentation.
+Runnable scripts for each routine are in [`examples/`](examples/). The
+[documentation](https://uniprjrc.github.io/FSDA-bridge/julia/) has a page per routine with its
+input arguments, a worked example with its output, and a link to the corresponding FSDA page.
 
 ## License
 
