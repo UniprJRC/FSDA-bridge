@@ -46,3 +46,6 @@ using LinearAlgebra
         @info "MATLAB integration tests skipped: set FSDA_INTEGRATION=true to run them"
     end
 end
+
+# test _to_py, _py2jl
+include("converters.jl")
