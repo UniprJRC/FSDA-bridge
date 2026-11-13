@@ -134,6 +134,13 @@ Runnable scripts for each routine are in [`examples/`](examples/). The
 [documentation](https://uniprjrc.github.io/FSDA-bridge/julia/) has a page per routine with its
 input arguments, a worked example with its output, and a link to the corresponding FSDA page.
 
+## Usage of AI tools
+
+Some parts of the package (such as code, tests, and documentation) were created
+with the help of LLM based tools, like Claude and Codex. Contributors used these
+tools to different extents. The maintainers have reviewed these contributions and 
+are responsible for them.
+
 ## License
 
 [EUPL-1.2](LICENSE), consistent with FSDA's own licensing.
