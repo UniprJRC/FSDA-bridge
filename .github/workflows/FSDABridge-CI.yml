@@ -29,6 +29,15 @@ jobs:
         with:
           version: ${{ matrix.version }}
       - uses: julia-actions/cache@v3
+      - uses: actions/setup-python@v7
+        id: python
+        with:
+          python-version: "3.12"
+      - name: Configure Python
+        run: |
+          python -m pip install numpy
+          echo "JULIA_CONDAPKG_BACKEND=Null" >> "$GITHUB_ENV"
+          echo "JULIA_PYTHONCALL_EXE=${{ steps.python.outputs.python-path }}" >> "$GITHUB_ENV"
       - uses: julia-actions/julia-buildpkg@v1
         with:
           project: packages/FSDAjl
